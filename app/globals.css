@@ -37,3 +37,8 @@ body {
 .card-title{
   @apply text-[#103D5C]  text-lg font-semibold leading-[132%];
 }
+
+
+.card-button{
+  @apply inline-flex h-10 items-center justify-center gap-2 rounded-lg border border-[#e4ebf1] px-4 py-2 text-sm font-medium text-[#123e5e] transition-colors hover:bg-slate-50 cursor-pointer;
+}
