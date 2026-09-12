@@ -29,93 +29,11 @@ export interface DataTableProps<T> {
 }
 
 // ==========================================
-// Helper Badge Component
-// ==========================================
-
-export type StatusType =
-    | "Completed"
-    | "Accepted"
-    | "In Progress"
-    | "Pending"
-    | "Under Review"
-    | "Cancelled"
-    | "Disputed"
-    | "Paid"
-    | "Failed"
-    | "Refunded";
-
-export const StatusBadge: React.FC<{ status: StatusType | string }> = ({ status }) => {
-    const getStyles = (s: string) => {
-        switch (s.toLowerCase()) {
-            case "completed":
-            case "paid":
-                return {
-                    bg: "bg-emerald-50",
-                    border: "outline-emerald-200",
-                    text: "text-emerald-700",
-                    dot: "bg-emerald-500",
-                };
-            case "accepted":
-            case "in progress":
-                return {
-                    bg: "bg-blue-50",
-                    border: "outline-blue-200",
-                    text: "text-blue-600",
-                    dot: "bg-blue-500",
-                };
-            case "pending":
-            case "under review":
-                return {
-                    bg: "bg-amber-50",
-                    border: "outline-amber-200",
-                    text: "text-amber-600",
-                    dot: "bg-amber-500",
-                };
-            case "cancelled":
-            case "disputed":
-            case "failed":
-                return {
-                    bg: "bg-rose-50",
-                    border: "outline-rose-200",
-                    text: "text-rose-600",
-                    dot: "bg-rose-500",
-                };
-            case "refunded":
-                return {
-                    bg: "bg-cyan-50",
-                    border: "outline-cyan-200",
-                    text: "text-cyan-600",
-                    dot: "bg-cyan-500",
-                };
-            default:
-                return {
-                    bg: "bg-slate-50",
-                    border: "outline-slate-200",
-                    text: "text-slate-600",
-                    dot: "bg-slate-400",
-                };
-        }
-    };
-
-    const style = getStyles(status);
-
-    return (
-        <span
-            className={`inline-flex items-center gap-1.5 rounded-sm px-2 py-0.5 text-xs font-medium outline outline-1 outline-offset-[-1px] ${style.bg} ${style.border} ${style.text}`}
-        >
-            <span className={`h-1.5 w-1.5 rounded-full ${style.dot}`} />
-            {status}
-        </span>
-    );
-};
-
-// ==========================================
 // Generic Reusable DataTable Component
 // ==========================================
 
 export function DataTable<T>({
-    title = "Recent Jobs",
-    onViewAll,
+
     columns,
     data,
     pageSize = 25,

@@ -1,6 +1,7 @@
 "use client"
 import { ArrowRight } from "lucide-react";
-import { Column, DataTable, StatusBadge, StatusType } from "../shared/DataTable";
+import { Column, DataTable } from "../shared/DataTable";
+import { StatusBadge, type StatusType } from "../shared/StatusBadge";
 
 export interface JobRecord {
     id: string;

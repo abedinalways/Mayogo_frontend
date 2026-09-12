@@ -84,7 +84,7 @@ export function RecentActivityCard({
           return (
             <div
               key={item.id}
-              className={`flex items-start justify-between py-5 ${
+              className={`flex items-start justify-between py-4 last:pb-0 ${
                 !isLast ? "border-b border-slate-100/70" : ""
               }`}
             >

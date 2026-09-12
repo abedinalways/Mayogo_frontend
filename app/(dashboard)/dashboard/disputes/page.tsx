@@ -1,10 +1,10 @@
 import { PagePlaceholder } from "@/components/Dashboard/PagePlaceholder";
+import DisputesTable from "@/components/Disputes/DisputesTable";
 
 export default function DisputesPage() {
   return (
-    <PagePlaceholder
-      title="Disputes"
-      subtitle="Review and resolve open disputes"
-    />
+    <>
+      <DisputesTable />
+    </>
   );
 }
