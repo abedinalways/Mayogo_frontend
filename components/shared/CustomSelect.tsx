@@ -1,87 +1,140 @@
 "use client";
 
-import React, { useState } from "react";
-import { ChevronDown, LucideIcon, ArrowUpDown, SlidersHorizontal } from "lucide-react";
+import React from "react";
+import { cn } from "cn";
 import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from "@/components/ui/select";
 
-export interface Option<T extends string = string> {
-  label: string;
-  value: T;
+export interface CustomSelectOption {
+    label: string;
+    value: string;
+    disabled?: boolean;
 }
 
-export interface CustomSelectProps<T extends string = string> {
-  options: Option<T>[];
-  value: T;
-  onChange: (value: T) => void;
-  placeholder?: string;
-  icon?: LucideIcon;
-  width?: string;
-  className?: string;
+export interface CustomSelectProps {
+    label?: string;
+    placeholder?: string;
+    options: CustomSelectOption[];
+    value?: string;
+    defaultValue?: string;
+    onValueChange?: (value: string) => void;
+    disabled?: boolean;
+    error?: string;
+    helperText?: string;
+    containerClassName?: string;
+    triggerClassName?: string;
+    contentClassName?: string;
+    itemClassName?: string;
 }
 
-export function CustomSelect<T extends string>({
-  options,
-  value,
-  onChange,
-  placeholder = "Select...",
-  icon: Icon,
-  width = "w-40",
-  className = "",
-}: CustomSelectProps<T>) {
-  const [open, setOpen] = useState(false);
+export function CustomSelect({
+    label,
+    placeholder = "Select an option",
+    options,
+    value,
+    defaultValue,
+    onValueChange,
+    disabled,
+    error,
+    helperText,
+    containerClassName = "",
+    triggerClassName = "",
+    contentClassName = "",
+    itemClassName = "",
+}: CustomSelectProps) {
+    const selectId = React.useId();
 
-  const selectedOption = options.find((opt) => opt.value === value);
-  const displayLabel = selectedOption ? selectedOption.label : placeholder;
-
-  return (
-    <Popover open={open} onOpenChange={setOpen}>
-      <PopoverTrigger
-        className={`flex h-10 items-center gap-2 rounded-lg border border-[#e4ebf1] bg-white px-4 py-2 text-sm font-medium text-[#0f3453] transition-colors hover:bg-slate-50 focus:outline-none ${className}`}
-      >
-        {Icon && <Icon className="h-4 w-4 shrink-0 text-[#0f3453]" />}
-        <span>{displayLabel}</span>
-        <ChevronDown
-          className={`h-4 w-4 shrink-0 text-[#0f3453] transition-transform duration-200 ${
-            open ? "rotate-180" : ""
-          }`}
-        />
-      </PopoverTrigger>
-
-      <PopoverContent
-        align="start"
-        className="w-auto p-0 border-none bg-transparent shadow-none"
-      >
+    return (
         <div
-          className={`${width} rounded-xl border border-slate-100 bg-[#f8fbfd] p-3 shadow-lg inline-flex flex-col justify-center items-start gap-2 font-['Manrope']`}
+            className={cn(
+                "w-full flex flex-col gap-1.5 font-['Manrope']",
+                containerClassName
+            )}
         >
-          {options.map((option) => {
-            const isSelected = option.value === value;
-            return (
-              <button
-                key={option.value}
-                type="button"
-                onClick={() => {
-                  onChange(option.value);
-                  setOpen(false);
-                }}
-                className={`self-stretch h-10 px-2 py-3 rounded-lg inline-flex justify-start items-center gap-2.5 transition-colors text-left cursor-pointer focus:outline-none ${
-                  isSelected
-                    ? "bg-[#0f3453] text-white font-medium"
-                    : "bg-transparent text-[#0f3453] font-normal hover:bg-slate-200/50"
-                }`}
-              >
-                <span className="text-sm leading-4">{option.label}</span>
-              </button>
-            );
-          })}
+            {label && (
+                <label
+                    htmlFor={selectId}
+                    className="text-sm font-normal text-slate-600 leading-6"
+                >
+                    {label}
+                </label>
+            )}
+
+            <Select
+                value={value}
+                defaultValue={defaultValue}
+                onValueChange={(val) => onValueChange?.(val ?? "")}
+                disabled={disabled}
+            >
+                <SelectTrigger
+                    id={selectId}
+                    className={cn(
+                        "w-full h-10 px-3 py-2 bg-white rounded-lg border border-slate-200 text-sm font-normal text-slate-800",
+                        "focus-visible:border-[#0a3558] focus-visible:ring-1 focus-visible:ring-[#0a3558]",
+                        "disabled:opacity-60 disabled:cursor-not-allowed",
+                        error &&
+                        "border-rose-500 focus-visible:border-rose-500 focus-visible:ring-rose-500 text-rose-500",
+                        triggerClassName
+                    )}
+                >
+                    <SelectValue placeholder={placeholder} />
+                </SelectTrigger>
+
+                <SelectContent
+                    side="bottom"
+                    sideOffset={4}
+                    align="start"                 // optional, but usually looks better
+                    alignItemWithTrigger={false}
+                    className={cn(
+                        "p-3 bg-slate-50 border border-slate-200 rounded-xl shadow-lg",
+                        "flex flex-col gap-2 font-['Manrope'] min-w-[var(--anchor-width)] ",
+                        contentClassName
+                    )}
+                >
+                    {options.map((option) => (
+                        <SelectItem
+                            key={option.value}
+                            value={option.value}
+                            disabled={option.disabled}
+                            className={cn(
+                                // base item styles
+                                "w-full h-10 px-2 py-3 rounded-lg text-sm transition-colors cursor-pointer",
+                                "flex items-center justify-start gap-2.5 outline-none select-none mb-2",
+                                // normal / unselected
+                                "bg-slate-100 text-slate-800 font-normal",
+                                // hover / highlighted (Base UI uses data-highlighted)
+                                "data-[highlighted]:bg-slate-200 data-[highlighted]:text-slate-900",
+                                // selected (Base UI uses data-[selected] or aria-selected)
+                                "data-[selected]:bg-[#0a3558] data-[selected]:text-white data-[selected]:font-medium",
+                                "aria-selected:bg-[#0a3558] aria-selected:text-white aria-selected:font-medium",
+                                // disabled
+                                "data-disabled:opacity-50 data-disabled:pointer-events-none",
+                                itemClassName
+                            )}
+                        >
+                            {option.label}
+                        </SelectItem>
+                    ))}
+                </SelectContent>
+            </Select>
+
+            {(error || helperText) && (
+                <span
+                    className={cn(
+                        "text-xs font-normal leading-3",
+                        error ? "text-rose-500" : "text-slate-600"
+                    )}
+                >
+                    {error || helperText}
+                </span>
+            )}
         </div>
-      </PopoverContent>
-    </Popover>
-  );
+    );
 }
 
 export default CustomSelect;

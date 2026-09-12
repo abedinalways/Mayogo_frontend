@@ -2,7 +2,7 @@
 
 import React, { useState } from "react";
 import { Search, ArrowUpDown, SlidersHorizontal, Download, ChevronDown } from "lucide-react";
-import { CustomSelect, Option } from "./CustomSelect";
+import { CustomDropdown, Option } from "./CustomDropdown";
 
 export interface TableToolbarProps {
   searchQuery?: string;
@@ -49,7 +49,7 @@ export function TableToolbar({
 
         {/* Sort Button */}
         {/* Sort Select */}
-        <CustomSelect
+        <CustomDropdown
           options={sortOptions}
           value={sort}
           onChange={setSort}
