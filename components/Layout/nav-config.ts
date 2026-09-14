@@ -53,7 +53,7 @@ export const navSections: NavSection[] = [
       },
       {
         label: "Support Ticket",
-        href: "/dashboard/suport-ticket",
+        href: "/dashboard/support-ticket",
         icon: MessagesSquare,
         subtitle: "Respond to customer support tickets",
       },

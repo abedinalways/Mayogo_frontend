@@ -167,7 +167,7 @@ export function SupportTicketsTable() {
                 border: "border-rose-200",
                 text: "text-rose-500",
                 dot: "bg-rose-500",
-            },
+            }, 
         }[priority];
 
         return (
@@ -277,7 +277,7 @@ export function SupportTicketsTable() {
             className: "min-w-[90px] pr-6 text-right",
             cell: (item) => (
                 <Link
-                    href={`/dashboard/tickets/${item.id}`}
+                    href={`/dashboard/support-ticket/${item.id}`}
                     className="inline-block rounded-lg border border-slate-200 bg-white px-3.5 py-1.5 text-xs font-medium text-slate-600 transition-colors hover:bg-slate-50 hover:text-slate-900"
                 >
                     Open
