@@ -53,7 +53,7 @@ export const navSections: NavSection[] = [
       },
       {
         label: "Support Ticket",
-        href: "/dashboard/support-ticket",
+        href: "/dashboard/suport-ticket",
         icon: MessagesSquare,
         subtitle: "Respond to customer support tickets",
       },
@@ -167,8 +167,18 @@ export const navSections: NavSection[] = [
 
 export const navItems = navSections.flatMap((section) => section.items);
 
+export function isPathActive(pathname: string, href: string) {
+  return pathname === href || pathname.startsWith(`${href}/`);
+}
+
+export function getActiveNavItem(pathname: string) {
+  return navItems
+    .filter((item) => isPathActive(pathname, item.href))
+    .sort((a, b) => b.href.length - a.href.length)[0];
+}
+
 export function getPageMeta(pathname: string) {
-  const item = navItems.find((entry) => entry.href === pathname);
+  const item = getActiveNavItem(pathname);
 
   return {
     title: item?.label ?? "Dashboard",

@@ -4,19 +4,20 @@ import { useState } from "react";
 import { usePathname } from "next/navigation";
 import { ChevronDown } from "lucide-react";
 import { SidebarMenuItem } from "./SidebarMenuItem";
-import { navSections } from "./nav-config";
+import { getActiveNavItem, isPathActive, navSections } from "./nav-config";
 
 function getOpenSections(pathname: string) {
   return Object.fromEntries(
     navSections.map((section) => [
       section.title,
-      section.items.some((item) => item.href === pathname),
+      section.items.some((item) => isPathActive(pathname, item.href)),
     ]),
   );
 }
 
 export function SidebarMenu({ onNavigate }: { onNavigate?: () => void }) {
   const pathname = usePathname();
+  const activeHref = getActiveNavItem(pathname)?.href;
   const [trackedPath, setTrackedPath] = useState(pathname);
   const [openSections, setOpenSections] = useState(() =>
     getOpenSections(pathname),
@@ -28,7 +29,7 @@ export function SidebarMenu({ onNavigate }: { onNavigate?: () => void }) {
       const next = { ...prev };
 
       for (const section of navSections) {
-        if (section.items.some((item) => item.href === pathname)) {
+        if (section.items.some((item) => isPathActive(pathname, item.href))) {
           next[section.title] = true;
         }
       }
@@ -73,7 +74,7 @@ export function SidebarMenu({ onNavigate }: { onNavigate?: () => void }) {
                     href={item.href}
                     label={item.label}
                     icon={item.icon}
-                    isActive={pathname === item.href}
+                    isActive={item.href === activeHref}
                     onClick={onNavigate}
                   />
                 ))}

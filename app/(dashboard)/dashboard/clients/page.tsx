@@ -1,10 +1,10 @@
 import { PagePlaceholder } from "@/components/Dashboard/PagePlaceholder";
+import { ClientsTable } from "@/components/Clients/ClientsTable";
 
 export default function ClientsPage() {
   return (
-    <PagePlaceholder
-      title="Clients"
-      subtitle="Manage client accounts"
-    />
+    <>
+      <ClientsTable />
+    </>
   );
 }

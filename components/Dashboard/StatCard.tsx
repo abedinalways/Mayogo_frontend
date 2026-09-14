@@ -6,13 +6,14 @@ import { TrendingDown, TrendingUp } from "lucide-react";
 export interface StatCardProps {
   title: string;
   value: string | number;
-  subtitle: string;
+  subtitle?: string;
   icon: LucideIcon;
   glowColor?: string;
   trend?: {
     value: string;
     positive: boolean;
   };
+  className?: string;
 }
 
 export const StatCard: React.FC<StatCardProps> = ({
@@ -32,7 +33,9 @@ export const StatCard: React.FC<StatCardProps> = ({
     >
       {/* Header */}
       <div className="flex items-center gap-3">
-        <Icon className="h-5 w-5 text-slate-900" strokeWidth={1.75} />
+        {Icon && (
+          <Icon className="h-5 w-5 text-slate-900" strokeWidth={1.75} />
+        )}
         <h3 className="text-[color:var(--Silver-900,#131313)] text-sm font-medium leading-[100%]">{title}</h3>
       </div>
 

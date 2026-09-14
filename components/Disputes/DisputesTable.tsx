@@ -230,12 +230,12 @@ function RiskBadge({ level }: { level: RiskLevel }) {
         Low: "bg-emerald-50 text-emerald-600 border-emerald-200",
         Medium: "bg-amber-50 text-amber-600 border-amber-200",
         High: "bg-rose-50 text-rose-500 border-rose-200",
-        Urgent: "bg-rose-100 text-rose-600 border-rose-300 font-semibold",
+        Urgent: "bg-rose-100 text-rose-600 border-rose-300 ",
     };
 
     return (
         <span
-            className={`inline-flex items-center justify-center px-2.5 py-0.5 rounded text-xs border ${styles[level]}`}
+            className={`inline-flex items-center justify-center px-2.5 py-0.5 rounded text-xs border font-medium ${styles[level]}`}
         >
             {level}
         </span>
@@ -289,7 +289,7 @@ function DisputeStatusBadge({ status }: { status: DisputeStatus }) {
 
     return (
         <span
-            className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium border ${current.bg} ${current.border} ${current.text}`}
+            className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium border text-nowrap ${current.bg} ${current.border} ${current.text}`}
         >
             <span className={`h-1.5 w-1.5 rounded-full ${current.dot}`} />
             {status}
@@ -332,7 +332,7 @@ export function DisputesTable() {
                         selectedIds.length === sampleDisputes.length &&
                         sampleDisputes.length > 0
                     }
-                    className="h-4 w-4 rounded border-slate-300 text-[#0a3558] focus:ring-0 cursor-pointer"
+                    className="h-4 w-4 rounded border-slate-300 text-[#0a3558] focus:ring-0 cursor-pointer "
                 />
             ),
             className: "w-12 px-4",
@@ -350,7 +350,7 @@ export function DisputesTable() {
             header: "Ticket ID",
             className: "w-28 min-w-[100px]",
             cell: (item) => (
-                <span className="text-sm font-semibold text-[#123e5e] hover:underline cursor-pointer">
+                <span className="text-[#103D5C]  text-sm font-normal leading-[160%] text-nowrap">
                     {item.ticketId}
                 </span>
             ),
@@ -360,7 +360,7 @@ export function DisputesTable() {
             header: "Job ID",
             className: "w-28 min-w-[100px]",
             cell: (item) => (
-                <span className="text-sm font-semibold text-[#123e5e] hover:underline cursor-pointer">
+                <span className="text-[#103D5C]  text-sm font-normal leading-[160%] underline decoration-solid [text-decoration-skip-ink:auto] decoration-auto underline-offset-auto [text-underline-position:from-font]">
                     {item.jobId}
                 </span>
             ),
@@ -377,10 +377,10 @@ export function DisputesTable() {
                         className="h-8 w-8 rounded-md border border-slate-100 object-cover"
                     />
                     <div className="flex flex-col">
-                        <span className="text-xs font-semibold text-[#123e5e]">
+                        <span className="text-[#103D5C]  text-xs font-medium leading-[160%]">
                             {item.service.name}
                         </span>
-                        <span className="text-[10px] font-medium text-[#8a9bab]">
+                        <span className="text-[#5A5A5A]  text-[10px] font-medium leading-[100%]">
                             {item.service.category}
                         </span>
                     </div>
@@ -398,7 +398,7 @@ export function DisputesTable() {
                         alt={item.client.name}
                         className="h-7 w-7 rounded-full border border-slate-200 object-cover"
                     />
-                    <span className="text-xs font-medium text-[#123e5e]">
+                    <span className="text-[#5A5A5A]  text-xs font-medium leading-[124%]">
                         {item.client.name}
                     </span>
                 </div>
@@ -415,7 +415,7 @@ export function DisputesTable() {
                         alt={item.expert.name}
                         className="h-7 w-7 rounded-full border border-slate-200 object-cover"
                     />
-                    <span className="text-xs font-medium text-[#123e5e]">
+                    <span className="text-[#5A5A5A]  text-xs font-medium leading-[124%]">
                         {item.expert.name}
                     </span>
                 </div>
@@ -426,7 +426,7 @@ export function DisputesTable() {
             header: "Dispute Reason",
             className: "min-w-[140px]",
             cell: (item) => (
-                <span className="text-xs font-normal text-slate-600">
+                <span className="text-[#5A5A5A]  text-xs font-normal leading-[160%]">
                     {item.disputeReason}
                 </span>
             ),
@@ -442,7 +442,7 @@ export function DisputesTable() {
             header: "Date Opened",
             className: "min-w-[120px]",
             cell: (item) => (
-                <span className="text-xs font-normal text-slate-500 whitespace-nowrap">
+                <span className="text-[#5A5A5A]  text-xs font-medium leading-[124%] whitespace-nowrap">
                     {item.dateOpened}
                 </span>
             ),
