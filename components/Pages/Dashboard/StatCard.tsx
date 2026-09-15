@@ -7,7 +7,7 @@ export interface StatCardProps {
   title: string;
   value: string | number;
   subtitle?: string;
-  icon: LucideIcon;
+  icon?: LucideIcon;
   glowColor?: string;
   trend?: {
     value: string;
@@ -33,10 +33,10 @@ export const StatCard: React.FC<StatCardProps> = ({
     >
       {/* Header */}
       <div className="flex items-center gap-3">
-        {Icon && (
-          <Icon className="h-5 w-5 text-slate-900" strokeWidth={1.75} />
-        )}
-        <h3 className="text-[color:var(--Silver-900,#131313)] text-sm font-medium leading-[100%]">{title}</h3>
+        {Icon && <Icon className="h-5 w-5 text-slate-900" strokeWidth={1.75} />}
+        <h3 className="text-[color:var(--Silver-900,#131313)] text-sm font-medium leading-[100%]">
+          {title}
+        </h3>
       </div>
 
       {/* Content */}
@@ -60,7 +60,9 @@ export const StatCard: React.FC<StatCardProps> = ({
               {trend.value}
             </span>
           )}
-          <span className="text-[color:var(--Body,#5A5A5A)] text-xs font-normal leading-[100%]">{subtitle}</span>
+          <span className="text-[color:var(--Body,#5A5A5A)] text-xs font-normal leading-[100%]">
+            {subtitle}
+          </span>
         </div>
       </div>
     </div>
