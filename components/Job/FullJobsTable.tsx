@@ -314,7 +314,7 @@ export function FullJobsTable() {
   return (
     <div className="w-full font-['Manrope']">
       {/* Top Controls Toolbar */}
-      <TableToolbar />
+      <TableToolbar onSortClick={() => { }} onFilterClick={() => { }} onExportClick={() => { }} />
 
       {/* Main Data Table */}
       <div className="border-x border-b border-[#E8E8E8] rounded-b-xl overflow-hidden bg-white">

@@ -289,6 +289,9 @@ export function ClientsTable() {
             <TableToolbar
                 searchQuery={searchTerm}
                 onSearchChange={handleSearchChange}
+                onSortClick={() => { }}
+                onFilterClick={() => { }}
+                onExportClick={() => { }}
             />
 
             {/* Main Data Table */}
