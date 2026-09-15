@@ -1,10 +1,10 @@
-import { PagePlaceholder } from "@/components/Dashboard/PagePlaceholder";
+import { PagePlaceholder } from "@/components/Pages/Dashboard/PagePlaceholder";
+import FullJobsTable from "@/components/Pages/Job/FullJobsTable";
 
 export default function JobsPage() {
   return (
-    <PagePlaceholder
-      title="Jobs"
-      subtitle="Track and manage platform jobs"
-    />
+    <div>
+      <FullJobsTable />
+    </div>
   );
 }

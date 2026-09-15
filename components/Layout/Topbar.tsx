@@ -1,9 +1,9 @@
 "use client";
 
 import { usePathname } from "next/navigation";
-import { Bell, Menu, Search } from "lucide-react";
-import { UserProfile } from "./UserProfile";
+import { Menu, Search } from "lucide-react";
 import { getPageMeta } from "./nav-config";
+import { NotificationsDropdown } from "@/components/shared/NotificationsDropdown";
 
 export function Topbar({
   isSidebarOpen,
@@ -39,28 +39,68 @@ export function Topbar({
         </div>
       </div>
 
-      <div className="flex items-center gap-3">
-        <label className="relative hidden h-9 w-56 items-center rounded-lg border border-[#e4ebf1] bg-white px-3 py-2.5 shadow-sm md:flex">
-          <span className="sr-only">Search</span>
-          <Search className="h-4 w-4 shrink-0 text-[#9aaab5]" />
-          <input
-            type="search"
-            placeholder="Type to search"
-            className="ml-2 w-full bg-transparent text-xs font-normal text-[#123e5e] placeholder:text-[#9aaab5] outline-none"
-          />
-        </label>
-
-        <button
-          type="button"
-          className="relative flex h-9 w-9 items-center justify-center rounded-full border border-[#e4ebf1] bg-white p-2.5 text-[#e6a600] transition-colors hover:bg-amber-50/50"
-          aria-label="Notifications"
-        >
-          <Bell className="h-4 w-4" fill="currentColor" />
-          <span className="absolute top-2 right-2 h-1.5 w-1.5 rounded-full bg-[#e6a600]" />
-        </button>
-
-        <UserProfile />
-      </div>
+      <HeaderActions />
     </header>
   );
+
 }
+
+
+
+
+
+export interface HeaderActionsProps {
+  onSearchChange?: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  onNotificationClick?: () => void;
+  user?: {
+    name: string;
+    role: string;
+    avatar: string;
+  };
+}
+
+export function HeaderActions({
+  onSearchChange,
+  onNotificationClick,
+  user = {
+    name: "Daniel Green",
+    role: "Admin",
+    avatar: "https://placehold.co/36x36",
+  },
+}: HeaderActionsProps) {
+  return (
+    <div className="flex items-center gap-3 font-['Manrope']">
+      {/* Search Input */}
+      <label className="relative hidden h-9 w-56 items-center rounded-lg border border-[#e4ebf1] bg-white px-3 py-2.5 shadow-sm transition-colors focus-within:border-slate-300 md:flex">
+        <span className="sr-only">Search</span>
+        <Search className="h-4 w-4 shrink-0 text-[#9aaab5]" />
+        <input
+          type="search"
+          placeholder="Type to search"
+          onChange={onSearchChange}
+          className="ml-2 w-full bg-transparent text-xs font-normal text-[#0f3453] placeholder:text-[#9aaab5] outline-none"
+        />
+      </label>
+
+      <NotificationsDropdown onOpen={onNotificationClick} />
+
+      {/* User Profile */}
+      <div className="flex items-center gap-3">
+        <img
+          src={user.avatar}
+          alt={user.name}
+          className="h-9 w-9 rounded-full object-cover"
+        />
+        <div className="flex flex-col">
+          <span className="text-base font-semibold text-[#0f3453] leading-5">
+            {user.name}
+          </span>
+          <span className="text-xs font-normal text-slate-500 leading-tight">
+            {user.role}
+          </span>
+        </div>
+      </div>
+    </div>
+  );
+}
+

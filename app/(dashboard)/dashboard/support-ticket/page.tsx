@@ -1,10 +1,10 @@
-import { PagePlaceholder } from "@/components/Dashboard/PagePlaceholder";
+import { PagePlaceholder } from "@/components/Pages/Dashboard/PagePlaceholder";
+import SupportTicketTable from "@/components/Pages/SupportTicket/SupportTicketTable";
 
 export default function SupportTicketPage() {
   return (
-    <PagePlaceholder
-      title="Support Ticket"
-      subtitle="Respond to customer support tickets"
-    />
+    <>
+      <SupportTicketTable />
+    </>
   );
 }
