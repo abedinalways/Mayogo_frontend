@@ -363,7 +363,7 @@ export function JobStatusTable() {
         filterSchema={jobsFilterSchema}
       />
       <div className="">
-        <DataTable columns={columns} data={sampleJobs} pagination={false} />
+        {/* <DataTable columns={columns} data={sampleJobs} pagination={false} /> */}
       </div>
     </div>
   );

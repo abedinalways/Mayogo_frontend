@@ -1,10 +1,9 @@
-import { PagePlaceholder } from "@/components/Pages/Dashboard/PagePlaceholder";
+import ExpertPayoutTable from "@/components/Pages/ExpertPayout/ExpertTable";
 
 export default function ExpertPayoutsPage() {
   return (
-    <PagePlaceholder
-      title="Expert Payouts"
-      subtitle="Release and track expert payouts"
-    />
+    <div>
+      <ExpertPayoutTable />
+    </div>
   );
 }

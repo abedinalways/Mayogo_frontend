@@ -69,10 +69,10 @@ const statusStyles: Record<
     dot: "bg-rose-500",
   },
   refunded: {
-    bg: "bg-cyan-50",
-    border: "outline-cyan-200",
-    text: "text-cyan-600",
-    dot: "bg-cyan-500",
+    bg: "bg-rose-50",
+    border: "outline-rose-200",
+    text: "text-[#EB3D4D]",
+    dot: "bg-rose-500",
   },
 };
 
