@@ -4,12 +4,12 @@ import { TransactionHistoryTable } from '../Clients/TransactionHistoryTable'
 import { ReviewsGivenTable } from '../Clients/ReviewsGivenTable'
 import ClientStatsCard from '../Clients/ClientStatsCard'
 import { JobStatusTable } from '../Clients/JobStatusTable'
-import BackButton from '../shared/BackButton'
+import BackButton from '../../shared/BackButton'
 
 export function ExpertDetailsPage() {
     return (
         <div className="space-y-4">
-            <BackButton/>
+            <BackButton />
             <ExpertProfileHeader />
 
             <ClientStatsCard />

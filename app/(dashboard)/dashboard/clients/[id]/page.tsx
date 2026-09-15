@@ -1,9 +1,9 @@
-import { JobStatusTable } from "@/components/Clients/JobStatusTable";
-import { ReviewsGivenTable } from "@/components/Clients/ReviewsGivenTable";
-import { TransactionHistoryTable } from "@/components/Clients/TransactionHistoryTable";
-import { ClientHeader } from "@/components/Clients/ClientHeader";
-import ClientStats from "@/components/Clients/ClientStats";
-import ClientStatsCard from "@/components/Clients/ClientStatsCard";
+import { JobStatusTable } from "@/components/Pages/Clients/JobStatusTable";
+import { ReviewsGivenTable } from "@/components/Pages/Clients/ReviewsGivenTable";
+import { TransactionHistoryTable } from "@/components/Pages/Clients/TransactionHistoryTable";
+import { ClientHeader } from "@/components/Pages/Clients/ClientHeader";
+import ClientStats from "@/components/Pages/Clients/ClientStats";
+import ClientStatsCard from "@/components/Pages/Clients/ClientStatsCard";
 export default function page() {
     return (
         <div className="space-y-4">

@@ -1,9 +1,9 @@
 "use client";
 
 import React, { useState } from "react";
-import { Column, DataTable } from "../shared/DataTable";
-import { StatusBadge, type StatusType } from "../shared/StatusBadge";
-import TableToolbar from "../shared/TableToolbar";
+import { Column, DataTable } from "../../shared/DataTable";
+import { StatusBadge, type StatusType } from "../../shared/StatusBadge";
+import TableToolbar from "../../shared/TableToolbar";
 import Link from "next/link";
 
 export interface FullJobRecord {

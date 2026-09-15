@@ -1,10 +1,10 @@
-import { PagePlaceholder } from "@/components/Dashboard/PagePlaceholder";
+import { PagePlaceholder } from "@/components/Pages/Dashboard/PagePlaceholder";
+import VerificationReqPage from "@/components/Pages/VerificationRequest/VerificationReqPage";
 
 export default function VerificationRequestsPage() {
   return (
-    <PagePlaceholder
-      title="Verification Requests"
-      subtitle="Approve pending verifications"
-    />
+    <>
+    <VerificationReqPage/>
+    </>
   );
 }

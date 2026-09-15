@@ -1,9 +1,9 @@
-import DashboardStatsCard from "@/components/Dashboard/DashboardStatsCard";
-import { MonthlyEarnings } from "@/components/Dashboard/MonthlyEarnings";
-import { TopCategoriesCard } from "@/components/Dashboard/TopCategories";
-import { RecentJobsTable } from "@/components/Dashboard/RecentJobsTable";
-import TopExperts from "@/components/Dashboard/TopExperts";
-import RecentActivityCard from "@/components/Dashboard/RecentActivityCard";
+import DashboardStatsCard from "@/components/Pages/Dashboard/DashboardStatsCard";
+import { MonthlyEarnings } from "@/components/Pages/Dashboard/MonthlyEarnings";
+import { TopCategoriesCard } from "@/components/Pages/Dashboard/TopCategories";
+import { RecentJobsTable } from "@/components/Pages/Dashboard/RecentJobsTable";
+import TopExperts from "@/components/Pages/Dashboard/TopExperts";
+import RecentActivityCard from "@/components/Pages/Dashboard/RecentActivityCard";
 import BackButton from "@/components/shared/BackButton";
 
 
@@ -23,6 +23,6 @@ export default function DashboardPage() {
         <RecentActivityCard />
         <TopExperts />
       </div>
-    </div>                    
+    </div>
   );
 }

@@ -3,7 +3,7 @@
 import React from "react";
 import Image from "next/image";
 import { Phone, Mail, MapPin, Calendar, CheckCircle2 } from "lucide-react";
-import CustomButton from "../shared/CustomButton";
+import CustomButton from "../../shared/CustomButton";
 
 export interface ExpertProfileHeaderProps {
     expert?: {

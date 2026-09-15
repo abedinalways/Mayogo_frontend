@@ -6,7 +6,7 @@ import JobStatusTimeline from './JobStatusTimeline'
 export default function RightSide() {
   return (
     <div className="flex flex-col gap-4 w-full ">
-        <InfoCard
+      <InfoCard
         title="Client Information"
         name="Sarah William"
         idText="Client ID #CET001"

@@ -1,7 +1,7 @@
 "use client"
 import { ArrowRight } from "lucide-react";
-import { Column, DataTable } from "../shared/DataTable";
-import { StatusBadge, type StatusType } from "../shared/StatusBadge";
+import { Column, DataTable } from "../../shared/DataTable";
+import { StatusBadge, type StatusType } from "../../shared/StatusBadge";
 
 export interface JobRecord {
     id: string;
@@ -157,7 +157,7 @@ export function RecentJobsTable() {
                     <button
                         type="button"
                         onClick={onViewAll}
-                         className="card-button"
+                        className="card-button"
                     >
                         <span>View All</span>
                         <ArrowRight className="h-4 w-4 text-[#123e5e]" />

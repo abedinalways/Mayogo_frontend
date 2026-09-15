@@ -1,5 +1,5 @@
-import { PagePlaceholder } from "@/components/Dashboard/PagePlaceholder";
-import FullJobsTable from "@/components/Job/FullJobsTable";
+import { PagePlaceholder } from "@/components/Pages/Dashboard/PagePlaceholder";
+import FullJobsTable from "@/components/Pages/Job/FullJobsTable";
 
 export default function JobsPage() {
   return (

@@ -3,8 +3,8 @@
 import React, { useState } from "react";
 import Link from "next/link";
 import { Search, ChevronDown, ChevronLeft, ChevronRight } from "lucide-react";
-import { Column, DataTable } from "../shared/DataTable";
-import TableToolbar from "../shared/TableToolbar";
+import { Column, DataTable } from "../../shared/DataTable";
+import TableToolbar from "../../shared/TableToolbar";
 
 export type TicketStatus = "Open" | "Resolved" | "Under Review";
 export type PriorityLevel = "Low" | "Medium" | "High" | "Urgent";
@@ -167,7 +167,7 @@ export function SupportTicketsTable() {
                 border: "border-rose-200",
                 text: "text-rose-500",
                 dot: "bg-rose-500",
-            }, 
+            },
         }[priority];
 
         return (
@@ -295,10 +295,10 @@ export function SupportTicketsTable() {
                 onSortClick={() => setSort(sort === "newest" ? "oldest" : "newest")}
             />
             <DataTable
-                    columns={columns}
-                    data={sampleTickets}
-                    pagination={false}
-                />
+                columns={columns}
+                data={sampleTickets}
+                pagination={false}
+            />
 
             {/* Custom Pagination Footer */}
             <div className="mt-6 flex flex-wrap items-center justify-between gap-4 pt-2">

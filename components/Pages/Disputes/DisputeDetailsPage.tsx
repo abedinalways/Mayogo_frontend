@@ -1,6 +1,6 @@
 "use client";
 
-import BackButton from '../shared/BackButton'
+import BackButton from '../../shared/BackButton'
 import DisputeHeader from './DisputeHeader';
 import DisputeJobDetails from './DisputeJobDetails';
 import DisputeClaimsComparison from './ClaimCard';
@@ -29,7 +29,7 @@ export default function DisputeDetailsPage() {
 
           {/* Right Column (2 Cards) */}
           <div className="lg:col-span-5 flex flex-col gap-6">
-            <AdminDecisionPanel />      
+            <AdminDecisionPanel />
             <InternalNotes />
           </div>
         </div>

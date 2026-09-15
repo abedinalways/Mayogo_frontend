@@ -2,7 +2,7 @@
 
 import React, { useState } from "react";
 import { Info, X } from "lucide-react";
-import CustomButton from "../shared/CustomButton";
+import CustomButton from "../../shared/CustomButton";
 import {
   Sheet,
   SheetContent,
@@ -180,9 +180,8 @@ export default function DisputeHeader({
               return (
                 <div
                   key={msg.id}
-                  className={`flex items-start gap-3.5 w-full ${
-                    isClient ? "justify-start" : "justify-end"
-                  }`}
+                  className={`flex items-start gap-3.5 w-full ${isClient ? "justify-start" : "justify-end"
+                    }`}
                 >
                   {/* Client Avatar Left */}
                   {isClient && (
@@ -196,9 +195,8 @@ export default function DisputeHeader({
                   <div className="max-w-[360px] flex flex-col gap-1.5">
                     {/* Header Info */}
                     <div
-                      className={`flex items-center gap-1.5 ${
-                        isClient ? "justify-start" : "justify-end"
-                      }`}
+                      className={`flex items-center gap-1.5 ${isClient ? "justify-start" : "justify-end"
+                        }`}
                     >
                       <span className="text-xs font-medium text-slate-800">
                         {msg.senderName}
@@ -211,20 +209,18 @@ export default function DisputeHeader({
 
                     {/* Message Bubble */}
                     <div
-                      className={`p-4 bg-slate-50 border border-slate-100 text-slate-700 text-sm font-normal leading-relaxed ${
-                        isClient
+                      className={`p-4 bg-slate-50 border border-slate-100 text-slate-700 text-sm font-normal leading-relaxed ${isClient
                           ? "rounded-t-2xl rounded-br-2xl"
                           : "rounded-t-2xl rounded-bl-2xl"
-                      }`}
+                        }`}
                     >
                       {msg.text}
                     </div>
 
                     {/* Timestamp */}
                     <span
-                      className={`text-[11px] font-normal text-slate-400 ${
-                        isClient ? "text-left" : "text-right"
-                      }`}
+                      className={`text-[11px] font-normal text-slate-400 ${isClient ? "text-left" : "text-right"
+                        }`}
                     >
                       {msg.timestamp}
                     </span>

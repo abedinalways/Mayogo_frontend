@@ -3,8 +3,8 @@
 import React, { useState } from "react";
 import Link from "next/link";
 import { Search, ArrowUpDown, SlidersHorizontal, Download } from "lucide-react";
-import { Column, DataTable } from "../shared/DataTable";
-import TableToolbar from "../shared/TableToolbar";
+import { Column, DataTable } from "../../shared/DataTable";
+import TableToolbar from "../../shared/TableToolbar";
 
 export type ClientStatus = "Active" | "Inactive" | "Suspended";
 

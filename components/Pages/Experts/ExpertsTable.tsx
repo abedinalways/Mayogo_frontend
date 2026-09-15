@@ -3,8 +3,8 @@
 import React, { useState } from "react";
 import Image from "next/image";
 import { MoreVertical } from "lucide-react";
-import { Column, DataTable } from "../shared/DataTable";
-import TableToolbar from "../shared/TableToolbar";
+import { Column, DataTable } from "../../shared/DataTable";
+import TableToolbar from "../../shared/TableToolbar";
 
 export type VerificationStatus =
     | "Level 1 verified"

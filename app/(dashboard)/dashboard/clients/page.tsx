@@ -1,5 +1,5 @@
-import { PagePlaceholder } from "@/components/Dashboard/PagePlaceholder";
-import { ClientsTable } from "@/components/Clients/ClientsTable";
+import { PagePlaceholder } from "@/components/Pages/Dashboard/PagePlaceholder";
+import { ClientsTable } from "@/components/Pages/Clients/ClientsTable";
 
 export default function ClientsPage() {
   return (

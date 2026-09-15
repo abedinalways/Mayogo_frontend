@@ -1,9 +1,9 @@
 "use client";
 
 import { usePathname } from "next/navigation";
-import { Bell, Menu, Search } from "lucide-react";
-import { UserProfile } from "./UserProfile";
+import { Menu, Search } from "lucide-react";
 import { getPageMeta } from "./nav-config";
+import { NotificationsDropdown } from "@/components/shared/NotificationsDropdown";
 
 export function Topbar({
   isSidebarOpen,
@@ -82,15 +82,7 @@ export function HeaderActions({
         />
       </label>
 
-      {/* Notification Button */}
-      <button
-        type="button"
-        onClick={onNotificationClick}
-        aria-label="Notifications"
-        className="flex h-9 w-9 items-center justify-center rounded-full border border-[#e4ebf1] bg-white text-[#f2ad1b] transition-colors hover:bg-amber-50/50"
-      >
-        <Bell className="h-4 w-4  text-[#f2ad1b]" />
-      </button>
+      <NotificationsDropdown onOpen={onNotificationClick} />
 
       {/* User Profile */}
       <div className="flex items-center gap-3">

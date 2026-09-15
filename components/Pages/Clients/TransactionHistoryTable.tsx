@@ -3,8 +3,8 @@
 import React, { useState } from "react";
 import Link from "next/link";
 import { Search, Star, Table } from "lucide-react";
-import { Column, DataTable } from "../shared/DataTable";
-import TableToolbar from "../shared/TableToolbar";
+import { Column, DataTable } from "../../shared/DataTable";
+import TableToolbar from "../../shared/TableToolbar";
 
 /* ==========================================
    1. TRANSACTION HISTORY TABLE

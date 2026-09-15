@@ -2,9 +2,9 @@
 
 import React, { useState } from "react";
 import { Search, ArrowUpDown, SlidersHorizontal, Download, ChevronDown, Link as LinkIcon } from "lucide-react";
-import { Column, DataTable } from "../shared/DataTable";
-import { StatusBadge, type StatusType } from "../shared/StatusBadge";
-import TableToolbar from "../shared/TableToolbar";
+import { Column, DataTable } from "../../shared/DataTable";
+import { StatusBadge, type StatusType } from "../../shared/StatusBadge";
+import TableToolbar from "../../shared/TableToolbar";
 import Link from "next/link";
 
 export type RiskLevel = "Low" | "Medium" | "High" | "Urgent";

@@ -1,4 +1,4 @@
-import { PagePlaceholder } from "@/components/Dashboard/PagePlaceholder";
+import { PagePlaceholder } from "@/components/Pages/Dashboard/PagePlaceholder";
 
 export default function ExpertPayoutsPage() {
   return (

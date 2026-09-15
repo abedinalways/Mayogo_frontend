@@ -7,8 +7,9 @@ import {
   SlidersHorizontal,
   MoreVertical,
 } from "lucide-react";
-import { Column, DataTable } from "../shared/DataTable";
-import TableToolbar from "../shared/TableToolbar";
+import { Column, DataTable } from "../../shared/DataTable";
+import TableToolbar from "../../shared/TableToolbar";
+import { SortOption } from "@/components/shared/SortDropdown";
 
 export type JobStatusType = "Pending" | "In Progress" | "Completed" | "Disputed";
 
@@ -31,7 +32,45 @@ export interface JobRecord {
   };
   status: JobStatusType;
 }
+const renderStatusBadge = (status: JobStatusType) => {
+  const config = {
+    Pending: {
+      bg: "bg-amber-50",
+      outline: "outline-amber-200/50",
+      text: "text-amber-700",
+      dot: "bg-amber-500",
+    },
+    "In Progress": {
+      bg: "bg-sky-50",
+      outline: "outline-sky-200/50",
+      text: "text-sky-600",
+      dot: "bg-sky-500",
+    },
+    Completed: {
+      bg: "bg-emerald-50",
+      outline: "outline-emerald-200/50",
+      text: "text-emerald-700",
+      dot: "bg-emerald-500",
+    },
+    Disputed: {
+      bg: "bg-rose-50",
+      outline: "outline-rose-200/50",
+      text: "text-rose-600",
+      dot: "bg-rose-500",
+    },
+  }[status];
 
+  return (
+    <div
+      className={`h-5 px-2 py-0.5 rounded-sm outline outline-1 outline-offset-[-1px] text-nowrap inline-flex justify-center items-center gap-1 ${config.bg} ${config.outline}`}
+    >
+      <span className={`h-2 w-2 rounded-full ${config.dot}`} />
+      <span className={`text-center text-xs font-medium font-['Manrope'] leading-4 ${config.text}`}>
+        {status}
+      </span>
+    </div>
+  );
+};
 const sampleJobs: JobRecord[] = [
   {
     id: "1",
@@ -203,49 +242,19 @@ const sampleJobs: JobRecord[] = [
   },
 ];
 
+
+const sortOptions: SortOption<string>[] = [
+  { label: "Newest First", value: "newest" },
+  { label: "Oldest First", value: "oldest" },
+  { label: "A-Z", value: "a-z" },
+  { label: "Z-A", value: "z-a" },
+];
+
 export function JobStatusTable() {
   const [searchTerm, setSearchTerm] = useState("");
-  const [sortBy, setSortBy] = useState<"asc" | "desc">("asc");
+  const [sortBy, setSortBy] = useState<string | undefined>(undefined);
 
-  const renderStatusBadge = (status: JobStatusType) => {
-    const config = {
-      Pending: {
-        bg: "bg-amber-50",
-        outline: "outline-amber-200/50",
-        text: "text-amber-700",
-        dot: "bg-amber-500",
-      },
-      "In Progress": {
-        bg: "bg-sky-50",
-        outline: "outline-sky-200/50",
-        text: "text-sky-600",
-        dot: "bg-sky-500",
-      },
-      Completed: {
-        bg: "bg-emerald-50",
-        outline: "outline-emerald-200/50",
-        text: "text-emerald-700",
-        dot: "bg-emerald-500",
-      },
-      Disputed: {
-        bg: "bg-rose-50",
-        outline: "outline-rose-200/50",
-        text: "text-rose-600",
-        dot: "bg-rose-500",
-      },
-    }[status];
 
-    return (
-      <div
-        className={`h-5 px-2 py-0.5 rounded-sm outline outline-1 outline-offset-[-1px] text-nowrap inline-flex justify-center items-center gap-1 ${config.bg} ${config.outline}`}
-      >
-        <span className={`h-2 w-2 rounded-full ${config.dot}`} />
-        <span className={`text-center text-xs font-medium font-['Manrope'] leading-4 ${config.text}`}>
-          {status}
-        </span>
-      </div>
-    );
-  };
 
   const columns: Column<JobRecord>[] = [
     {
@@ -345,12 +354,12 @@ export function JobStatusTable() {
 
   return (
     <div >
-      <TableToolbar title="Job Status" onSortClick={() => setSortBy(sortBy === "asc" ? "desc" : "asc")} />
-            <div className="">
-            <DataTable  columns={columns} data={sampleJobs} pagination={false} />
-        </div>
+      <TableToolbar title="Job Status" onSortClick={() => setSortBy(sortBy === "newest" ? "oldest" : "newest" as string)} sortOptions={sortOptions} onSortChange={(value) => setSortBy(value)} />
+      <div className="">
+        <DataTable columns={columns} data={sampleJobs} pagination={false} />
+      </div>
     </div>
-    );
+  );
 }
 
 export default JobStatusTable;

@@ -1,4 +1,4 @@
-import JobDetatilsPage from '@/components/Job/JobDetatilsPage'
+import JobDetatilsPage from '@/components/Pages/Job/JobDetatilsPage'
 import BackButton from '@/components/shared/BackButton'
 import React from 'react'
 

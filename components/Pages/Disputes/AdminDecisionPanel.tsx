@@ -1,9 +1,9 @@
 "use client";
 
 import React, { useState } from "react";
-import CustomButton from "../shared/CustomButton";
-import { CustomInput, CustomTextarea } from "../shared/CustomInput";
-import CustomSelect from "../shared/CustomSelect";
+import CustomButton from "../../shared/CustomButton";
+import { CustomInput, CustomTextarea } from "../../shared/CustomInput";
+import CustomSelect from "../../shared/CustomSelect";
 
 type DecisionType =
     | "full_refund"

@@ -2,7 +2,7 @@
 
 import React, { useState } from "react";
 import { FileText } from "lucide-react";
-import CustomButton from "../shared/CustomButton";
+import CustomButton from "../../shared/CustomButton";
 
 export interface NoteItem {
   id: string;
@@ -78,7 +78,7 @@ export function InternalNotes({
       </div>
 
       {/* Action Button */}
-  
+
 
       <CustomButton
         variant="primary"
