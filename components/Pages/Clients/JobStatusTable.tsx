@@ -10,6 +10,7 @@ import {
 import { Column, DataTable } from "../../shared/DataTable";
 import TableToolbar from "../../shared/TableToolbar";
 import { SortOption } from "@/components/shared/SortDropdown";
+import { jobsFilterSchema } from "@/components/shared/filter-presets";
 
 export type JobStatusType = "Pending" | "In Progress" | "Completed" | "Disputed";
 
@@ -354,7 +355,13 @@ export function JobStatusTable() {
 
   return (
     <div >
-      <TableToolbar title="Job Status" onSortClick={() => setSortBy(sortBy === "newest" ? "oldest" : "newest" as string)} sortOptions={sortOptions} onSortChange={(value) => setSortBy(value)} />
+      <TableToolbar
+        title="Job Status"
+        onSortClick={() => setSortBy(sortBy === "newest" ? "oldest" : "newest")}
+        sortOptions={sortOptions}
+        onSortChange={(value) => setSortBy(value)}
+        filterSchema={jobsFilterSchema}
+      />
       <div className="">
         <DataTable columns={columns} data={sampleJobs} pagination={false} />
       </div>

@@ -8,7 +8,8 @@ import {
   type SortOption,
 } from "./SortDropdown";
 import { FilterDropdown } from "./FilterDropdown";
-import { defaultFilterValues, type FilterValues } from "./FilterPanel";
+import { getDefaultFilterValues, type FilterField, type FilterValues } from "./filter-schema";
+import { defaultFilterSchema } from "./filter-presets";
 
 export interface TableToolbarProps {
   title?: string;
@@ -18,6 +19,7 @@ export interface TableToolbarProps {
   sortOptions?: SortOption[];
   onSortChange?: (value: string) => void;
   onFilterClick?: () => void;
+  filterSchema?: FilterField[];
   onFilterChange?: (value: FilterValues) => void;
   onExportClick?: () => void;
 }
@@ -30,12 +32,17 @@ export function TableToolbar({
   sortOptions = defaultSortOptions,
   onSortChange,
   onFilterClick,
+  filterSchema,
   onFilterChange,
   onExportClick,
 }: TableToolbarProps) {
+  const schema = filterSchema ?? defaultFilterSchema;
   const [sort, setSort] = useState<string | undefined>(undefined);
-  const [filter, setFilter] = useState<FilterValues>(defaultFilterValues);
+  const [filter, setFilter] = useState<FilterValues>(() =>
+    getDefaultFilterValues(schema),
+  );
   const hasTitle = Boolean(title);
+  const showFilter = onFilterClick !== undefined || filterSchema !== undefined;
 
   const actions = (
     <div className="flex flex-wrap items-center gap-4">
@@ -62,8 +69,9 @@ export function TableToolbar({
         />
       )}
 
-      {onFilterClick && (
+      {showFilter && (
         <FilterDropdown
+          schema={schema}
           value={filter}
           onApply={(next) => {
             setFilter(next);

@@ -1,47 +1,30 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Check } from "lucide-react";
 import { cn } from "@/lib/utils";
+import {
+  getDefaultFilterValues,
+  getMultiValue,
+  getSingleValue,
+  toggleMultiValue,
+  type FilterField,
+  type FilterValues,
+} from "./filter-schema";
+import { defaultFilterSchema } from "./filter-presets";
 
-export type FilterValues = {
-  statuses: string[];
-  dateRange: string;
-};
-
-export const defaultFilterValues: FilterValues = {
-  statuses: ["all"],
-  dateRange: "all",
-};
-
-const defaultStatusOptions = [
-  { label: "All", value: "all" },
-  { label: "Active", value: "active" },
-  { label: "Suspended", value: "suspended" },
-  { label: "Inactive", value: "inactive" },
-];
-
-const defaultDateRangeOptions = [
-  { label: "All", value: "all" },
-  { label: "Last 7 Days", value: "7d" },
-  { label: "Last 30 Days", value: "30d" },
-  { label: "Last 3 Months", value: "3m" },
-  { label: "Last 6 Months", value: "6m" },
-];
-
-const defaultServiceCategoryOptions = [
-  { label: "All", value: "all" },
-  { label: "Service Category 1", value: "service-category-1" },
-  { label: "Service Category 2", value: "service-category-2" },
-  { label: "Service Category 3", value: "service-category-3" },
-];
+export type {
+  FilterField,
+  FilterOption,
+  FilterValues,
+} from "./filter-schema";
+export { getDefaultFilterValues } from "./filter-schema";
+export { defaultFilterSchema } from "./filter-presets";
 
 export type FilterPanelProps = {
   open?: boolean;
+  schema?: FilterField[];
   value?: FilterValues;
-  statusOptions?: { label: string; value: string }[];
-  dateRangeOptions?: { label: string; value: string }[];
-  serviceCategoryOptions?: { label: string; value: string }[];
   onApply: (value: FilterValues) => void;
   onCancel: () => void;
 };
@@ -106,7 +89,7 @@ function RadioOption({
   );
 }
 
-function ServiceCategoryOption({
+function ChipOption({
   label,
   checked,
   onChange,
@@ -116,109 +99,122 @@ function ServiceCategoryOption({
   onChange: () => void;
 }) {
   return (
-    <label className="flex cursor-pointer items-center gap-2.5">
-      <input
-        type="checkbox"
-        checked={checked}
-        onChange={onChange}
-        className="sr-only"
-      />
-      <span
-        className={cn(
-          "flex h-[18px] w-[18px] shrink-0 items-center justify-center rounded-[4px] border",
-          checked ? "border-[#e9b83f] bg-[#e9b83f]" : "border-[#d3dbe3] bg-white",
-        )}
-      />
-      <span className="text-sm font-normal text-[#123e5e]">{label}</span>
-    </label>
+    <button
+      type="button"
+      onClick={onChange}
+      className={cn(
+        "rounded-lg border border-[#0a3558] px-2 py-1 text-xs font-medium transition-colors",
+        checked ? "bg-[#0a3558] text-white" : "bg-white text-[#0a3558]",
+      )}
+    >
+      {label}
+    </button>
+  );
+}
+
+function FilterFieldGroup({
+  field,
+  values,
+  onChange,
+}: {
+  field: FilterField;
+  values: FilterValues;
+  onChange: (id: string, value: string | string[]) => void;
+}) {
+  const selected = getMultiValue(values, field.id);
+  const selectedSingle = getSingleValue(values, field.id);
+
+  return (
+    <div className="space-y-2.5">
+      <p className="text-sm font-semibold text-[#123e5e]">{field.label}</p>
+
+      {field.type === "chips" ? (
+        <div className="flex flex-wrap gap-2">
+          {field.options.map((option) => (
+            <ChipOption
+              key={option.value}
+              label={option.label}
+              checked={selected.includes(option.value)}
+              onChange={() =>
+                onChange(
+                  field.id,
+                  toggleMultiValue(selected, option.value, field.allValue),
+                )
+              }
+            />
+          ))}
+        </div>
+      ) : field.type === "radio" ? (
+        field.options.map((option) => (
+          <RadioOption
+            key={option.value}
+            label={option.label}
+            checked={selectedSingle === option.value}
+            onChange={() => onChange(field.id, option.value)}
+          />
+        ))
+      ) : (
+        field.options.map((option) => (
+          <CheckOption
+            key={option.value}
+            label={option.label}
+            checked={selected.includes(option.value)}
+            onChange={() =>
+              onChange(
+                field.id,
+                toggleMultiValue(selected, option.value, field.allValue),
+              )
+            }
+          />
+        ))
+      )}
+    </div>
   );
 }
 
 export function FilterPanel({
   open = true,
-  value = defaultFilterValues,
-  statusOptions = defaultStatusOptions,
-  dateRangeOptions = defaultDateRangeOptions,
-  serviceCategoryOptions = defaultServiceCategoryOptions,
+  schema = defaultFilterSchema,
+  value,
   onApply,
   onCancel,
 }: FilterPanelProps) {
-  const [draft, setDraft] = useState<FilterValues>(value);
+  const defaults = useMemo(() => getDefaultFilterValues(schema), [schema]);
+  const [draft, setDraft] = useState<FilterValues>(value ?? defaults);
 
   useEffect(() => {
-    if (open) setDraft(value);
-  }, [open, value]);
+    if (open) setDraft(value ?? defaults);
+  }, [open, value, defaults]);
 
-  const toggleStatus = (next: string) => {
-    setDraft((prev) => {
-      if (next === "all") {
-        return { ...prev, statuses: ["all"] };
-      }
-
-      const withoutAll = prev.statuses.filter((item) => item !== "all");
-      const statuses = withoutAll.includes(next)
-        ? withoutAll.filter((item) => item !== next)
-        : [...withoutAll, next];
-
-      return {
-        ...prev,
-        statuses: statuses.length === 0 ? ["all"] : statuses,
-      };
-    });
+  const updateField = (id: string, next: string | string[]) => {
+    setDraft((prev) => ({ ...prev, [id]: next }));
   };
 
   return (
-    <div className="w-[268px] rounded-2xl border border-[#e4ebf1] bg-white p-5 font-['Manrope'] shadow-lg">
-      <div className="mb-4 flex items-center justify-between">
+    <div className="flex w-[292px] flex-col rounded-2xl border border-[#e4ebf1] bg-white font-['Manrope'] shadow-lg">
+      <div className="flex items-center justify-between px-5 pt-5">
         <h3 className="text-base font-semibold text-[#123e5e]">Filters</h3>
         <button
           type="button"
-          onClick={() => setDraft(defaultFilterValues)}
+          onClick={() => setDraft(defaults)}
           className="text-sm font-medium text-[#e9b83f] transition-colors hover:text-[#d4a52e]"
         >
           Reset
         </button>
       </div>
 
-      <div className="space-y-2.5">
-        <p className="text-sm font-semibold text-[#123e5e]">Status</p>
-        {statusOptions.map((option) => (
-          <CheckOption
-            key={option.value}
-            label={option.label}
-            checked={draft.statuses.includes(option.value)}
-            onChange={() => toggleStatus(option.value)}
-          />
-        ))}
-      </div>
-      
-
-      <div className="mt-5 space-y-2.5">
-        <p className="text-sm font-semibold text-[#123e5e]">Service Category</p>
-        {serviceCategoryOptions.map((option) => (
-          <RadioOption
-            key={option.value}
-            label={option.label}
-            checked={draft.dateRange === option.value}
-            onChange={() => setDraft((prev) => ({ ...prev, dateRange: option.value }))}
+      <div className="mt-4 max-h-[60vh] space-y-5 overflow-y-auto px-5">
+        {schema.map((field) => (
+          <FilterFieldGroup
+            key={field.id}
+            field={field}
+            values={draft}
+            onChange={updateField}
           />
         ))}
       </div>
 
-
-      <div className="mt-5 space-y-2.5">
-        <p className="text-sm font-semibold text-[#123e5e]">Date Range</p>
-        {dateRangeOptions.map((option) => (
-          <RadioOption
-            key={option.value}
-            label={option.label}
-            checked={draft.dateRange === option.value}
-            onChange={() => setDraft((prev) => ({ ...prev, dateRange: option.value }))}
-          />
-        ))}
-      </div>
-
-      <div className="mt-6 flex items-center gap-3">
+      <div className="mt-6 flex items-center gap-3 px-5 pb-5">
         <button
           type="button"
           onClick={onCancel}
@@ -237,5 +233,5 @@ export function FilterPanel({
     </div>
   );
 }
- 
+
 export default FilterPanel;

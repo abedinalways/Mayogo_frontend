@@ -4,6 +4,7 @@ import React, { useState } from "react";
 import { Column, DataTable } from "../../shared/DataTable";
 import { StatusBadge, type StatusType } from "../../shared/StatusBadge";
 import TableToolbar from "../../shared/TableToolbar";
+import { jobsFilterSchema } from "../../shared/filter-presets";
 import Link from "next/link";
 
 export interface FullJobRecord {
@@ -314,7 +315,11 @@ export function FullJobsTable() {
   return (
     <div className="w-full font-['Manrope']">
       {/* Top Controls Toolbar */}
-      <TableToolbar onSortClick={() => { }} onFilterClick={() => { }} onExportClick={() => { }} />
+      <TableToolbar
+        onSortClick={() => {}}
+        onExportClick={() => {}}
+        filterSchema={jobsFilterSchema}
+      />
 
       {/* Main Data Table */}
       <div className="border-x border-b border-[#E8E8E8] rounded-b-xl overflow-hidden bg-white">

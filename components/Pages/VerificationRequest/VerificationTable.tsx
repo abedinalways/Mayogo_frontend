@@ -4,6 +4,7 @@ import React, { useState } from "react";
 import Image from "next/image";
 import { Column, DataTable } from "@/components/shared/DataTable";
 import TableToolbar from "@/components/shared/TableToolbar";
+import { verificationFilterSchema } from "@/components/shared/filter-presets";
 
 export type VerificationStatus =
   | "Resubmission Required"
@@ -270,9 +271,9 @@ export function VerificationTable() {
   return (
     <div>
       <TableToolbar
-        onFilterClick={() => console.log("Filter clicked")}
         onSortClick={() => setSortBy(sortBy === "asc" ? "desc" : "asc")}
         onExportClick={() => console.log("Export clicked")}
+        filterSchema={verificationFilterSchema}
       />
       <div>
         <DataTable

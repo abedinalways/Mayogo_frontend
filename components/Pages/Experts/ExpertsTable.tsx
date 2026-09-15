@@ -5,6 +5,7 @@ import Image from "next/image";
 import { MoreVertical } from "lucide-react";
 import { Column, DataTable } from "../../shared/DataTable";
 import TableToolbar from "../../shared/TableToolbar";
+import { expertsFilterSchema } from "../../shared/filter-presets";
 
 export type VerificationStatus =
     | "Level 1 verified"
@@ -333,8 +334,8 @@ export function ExpertsTable() {
                 searchQuery={searchTerm}
                 onSearchChange={handleSearchChange}
                 onSortClick={() => { }}
-                onFilterClick={() => { }}
                 onExportClick={() => { }}
+                filterSchema={expertsFilterSchema}
             />
 
             {/* Main Data Table */}

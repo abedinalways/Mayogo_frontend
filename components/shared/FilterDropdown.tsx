@@ -2,24 +2,30 @@
 
 import { SlidersHorizontal } from "lucide-react";
 import { CustomDropdown } from "./CustomDropdown";
-import { FilterPanel, defaultFilterValues, type FilterValues } from "./FilterPanel";
+import { FilterPanel } from "./FilterPanel";
+import {
+  getDefaultFilterValues,
+  type FilterField,
+  type FilterValues,
+} from "./filter-schema";
+import { defaultFilterSchema } from "./filter-presets";
 import { cn } from "@/lib/utils";
 
 export type FilterDropdownProps = {
+  schema?: FilterField[];
   value?: FilterValues;
   onApply?: (value: FilterValues) => void;
-  statusOptions?: { label: string; value: string }[];
-  dateRangeOptions?: { label: string; value: string }[];
   className?: string;
 };
 
 export function FilterDropdown({
-  value = defaultFilterValues,
+  schema = defaultFilterSchema,
+  value,
   onApply,
-  statusOptions,
-  dateRangeOptions,
   className,
 }: FilterDropdownProps) {
+  const applied = value ?? getDefaultFilterValues(schema);
+
   return (
     <CustomDropdown
       triggerClassName={cn(
@@ -36,9 +42,8 @@ export function FilterDropdown({
       {({ close, open }) => (
         <FilterPanel
           open={open}
-          value={value}
-          statusOptions={statusOptions}
-          dateRangeOptions={dateRangeOptions}
+          schema={schema}
+          value={applied}
           onCancel={close}
           onApply={(next) => {
             onApply?.(next);
