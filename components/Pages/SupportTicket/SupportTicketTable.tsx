@@ -300,51 +300,7 @@ export function SupportTicketsTable() {
                 pagination={false}
             />
 
-            {/* Custom Pagination Footer */}
-            <div className="mt-6 flex flex-wrap items-center justify-between gap-4 pt-2">
-                {/* Show Items Selector */}
-                <div className="flex items-center gap-2">
-                    <span className="text-xs font-medium text-[#0a3558]">Show items</span>
-                    <div className="relative">
-                        <select className="appearance-none rounded-lg border border-slate-200 bg-white py-1.5 pl-3 pr-7 text-xs font-medium text-[#0a3558] focus:outline-none focus:ring-1 focus:ring-[#0a3558] cursor-pointer">
-                            <option value="25">25</option>
-                            <option value="50">50</option>
-                            <option value="100">100</option>
-                        </select>
-                        <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-amber-500 pointer-events-none" />
-                    </div>
-                </div>
-
-                {/* Pagination Controls */}
-                <div className="flex items-center gap-1.5">
-                    <button
-                        disabled
-                        className="flex h-8 w-8 items-center justify-center rounded-lg border border-slate-200 bg-white text-amber-500 opacity-50 cursor-not-allowed"
-                    >
-                        <ChevronLeft className="h-4 w-4" />
-                    </button>
-
-                    <button className="flex h-8 w-8 items-center justify-center rounded-lg bg-slate-100 text-xs font-semibold text-[#0a3558]">
-                        1
-                    </button>
-                    <button className="flex h-8 w-8 items-center justify-center rounded-lg text-xs font-medium text-slate-600 hover:bg-slate-50">
-                        2
-                    </button>
-                    <button className="flex h-8 w-8 items-center justify-center rounded-lg text-xs font-medium text-slate-600 hover:bg-slate-50">
-                        3
-                    </button>
-                    <span className="flex h-8 w-8 items-center justify-center text-xs text-slate-400">
-                        ...
-                    </span>
-                    <button className="flex h-8 w-8 items-center justify-center rounded-lg text-xs font-medium text-slate-600 hover:bg-slate-50">
-                        4
-                    </button>
-
-                    <button className="flex h-8 w-8 items-center justify-center rounded-lg border border-slate-200 bg-white text-amber-500 hover:bg-slate-50">
-                        <ChevronRight className="h-4 w-4" />
-                    </button>
-                </div>
-            </div>
+        
         </div>
     );
 }
