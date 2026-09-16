@@ -1,4 +1,4 @@
-'use client'
+"use client";
 
 import { User, Phone, CheckCircle2, Star } from "lucide-react";
 

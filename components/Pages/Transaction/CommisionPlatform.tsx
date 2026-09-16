@@ -1,7 +1,17 @@
+"use client";
 import CustomButton from "@/components/shared/CustomButton";
+import CustomModal from "@/components/shared/CustomModal";
 import React from "react";
+import { useState } from "react";
+import EditCommisionRate from "./EditCommisionRate";
+import WithdrawBalance from "./WithdrawBalance";
 
 export default function CommisionPlatform() {
+  const [open, setOpen] = useState(false);
+  const [withdrawOpen, setWithdrawOpen] = useState(false);
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [commissionRate, setCommissionRate] = useState(10);
+
   return (
     <div>
       {/* Header */}
@@ -10,7 +20,7 @@ export default function CommisionPlatform() {
           Commission & Platform Earnings
         </h1>
 
-        <CustomButton type="button" size="sm">
+        <CustomButton type="button" size="sm" onClick={() => setOpen(true)}>
           Edit Commission Rate
         </CustomButton>
       </div>
@@ -42,7 +52,9 @@ export default function CommisionPlatform() {
               </p>
             </div>
 
-            <CustomButton type="button">Withdraw Balance</CustomButton>
+            <CustomButton type="button" onClick={() => setWithdrawOpen(true)}>
+              Withdraw Balance
+            </CustomButton>
           </div>
         </div>
 
@@ -60,7 +72,7 @@ export default function CommisionPlatform() {
               </p>
 
               <h3 className="text-[#103D5C] text-[32px] font-semibold leading-[124%] mt-4">
-                10%
+                {commissionRate}%
               </h3>
             </div>
 
@@ -154,6 +166,36 @@ export default function CommisionPlatform() {
           </div>
         </div>
       </div>
+
+      <CustomModal
+        open={open}
+        onOpenChange={setOpen}
+        title="Edit Commission Rate"
+        description="Update the platform commission percentage"
+        preventClose={isProcessing}
+      >
+        <EditCommisionRate
+          currentRate={commissionRate}
+          onSuccess={(newRate) => {
+            setCommissionRate(newRate);
+            setOpen(false);
+          }}
+          onClose={() => setOpen(false)}
+          onProcessingChange={setIsProcessing}
+        />
+      </CustomModal>
+
+      <CustomModal
+        open={withdrawOpen}
+        onOpenChange={setWithdrawOpen}
+        title="Withdraw Balance"
+        description="Transfer available earnings to your account"
+      >
+        <WithdrawBalance
+          availableBalance="$1,842.00"
+          onClose={() => setWithdrawOpen(false)}
+        />
+      </CustomModal>
     </div>
   );
 }
