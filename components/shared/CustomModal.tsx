@@ -17,7 +17,7 @@ type Size = "xsm" | "sm" | "md" | "mmd" | "lg" | "xl" | "full";
 
 const SIZE_CLASSES: Record<Size, string> = {
     xsm: "sm:max-w-[500px]",
-    sm: "sm:max-w-[367px]",
+    sm: "sm:max-w-[384px]",
     md: "sm:max-w-[680px]",
     mmd: "sm:max-w-[684px]",
     lg: "sm:max-w-[918px]",

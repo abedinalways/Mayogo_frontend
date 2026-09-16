@@ -3,12 +3,13 @@
 import React, { useState } from "react";
 import Image from "next/image";
 import { Column, DataTable } from "@/components/shared/DataTable";
-import TableToolbar from "@/components/shared/TableToolbar";
+
 import { verificationFilterSchema } from "@/components/shared/filter-presets";
 
 import VerificationModal from "./VerificationModal";
 import CustomModal from "@/components/shared/CustomModal";
 import VerificationDecisionPanel from "./VerificationDecisionPanel";
+import { TableToolbar } from "@/components/shared/TableToolbar";
 
 export type VerificationStatus =
   | "Resubmission Required"
@@ -131,6 +132,7 @@ const renderStatusBadge = (status: VerificationStatus) => {
 
 export function VerificationTable() {
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  const [searchTerm, setSearchTerm] = useState("");
   const [sortBy, setSortBy] = useState<"asc" | "desc">("asc");
   const [selectedId, setSelectedId] = useState<string | undefined>(undefined);
   const [viewDetailsModal, setViewDetailsModal] = useState<boolean>(false);
@@ -290,6 +292,8 @@ export function VerificationTable() {
   return (
     <div>
       <TableToolbar
+        searchQuery={searchTerm}
+        onSearchChange={(e) => setSearchTerm(e.target.value)}
         onSortClick={() => setSortBy(sortBy === "asc" ? "desc" : "asc")}
         onExportClick={() => console.log("Export clicked")}
         filterSchema={verificationFilterSchema}
