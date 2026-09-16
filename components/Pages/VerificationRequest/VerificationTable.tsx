@@ -6,6 +6,10 @@ import { Column, DataTable } from "@/components/shared/DataTable";
 import TableToolbar from "@/components/shared/TableToolbar";
 import { verificationFilterSchema } from "@/components/shared/filter-presets";
 
+import VerificationModal from "./VerificationModal";
+import CustomModal from "@/components/shared/CustomModal";
+import VerificationDecisionPanel from "./VerificationDecisionPanel";
+
 export type VerificationStatus =
   | "Resubmission Required"
   | "Pending"
@@ -83,9 +87,58 @@ const sampleVerifications: VerificationRecord[] = [
   },
 ];
 
+const renderStatusBadge = (status: VerificationStatus) => {
+  const config = {
+    "Resubmission Required": {
+      bg: "bg-amber-400/20",
+      border: "outline-amber-300/50",
+      text: "text-amber-700",
+      dot: "bg-amber-500",
+    },
+    Pending: {
+      bg: "bg-sky-50",
+      border: "outline-sky-200",
+      text: "text-sky-600",
+      dot: "bg-sky-500",
+    },
+    Approved: {
+      bg: "bg-emerald-50",
+      border: "outline-emerald-200",
+      text: "text-emerald-700",
+      dot: "bg-emerald-500",
+    },
+    Rejected: {
+      bg: "bg-rose-50",
+      border: "outline-rose-200",
+      text: "text-rose-600",
+      dot: "bg-rose-500",
+    },
+  }[status];
+
+  return (
+    <div
+      className={`inline-flex h-5 items-center gap-1 rounded-sm px-2 py-0.5 outline outline-1 outline-offset-[-1px] ${config.bg} ${config.border}`}
+    >
+      <span className={`h-1.5 w-1.5 rounded-full ${config.dot}`} />
+      <span
+        className={`font-['Manrope'] text-xs font-medium leading-4 ${config.text}`}
+      >
+        {status}
+      </span>
+    </div>
+  );
+};
+
 export function VerificationTable() {
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [sortBy, setSortBy] = useState<"asc" | "desc">("asc");
+  const [selectedId, setSelectedId] = useState<string | undefined>(undefined);
+  const [viewDetailsModal, setViewDetailsModal] = useState<boolean>(false);
+  const [approvedModal, setApprovedModal] = useState<boolean>(false);
+  const handleViewDetails = (id: string) => {
+    setSelectedId(id);
+    setViewDetailsModal(true);
+  };
 
   const handleSelectAll = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.checked) {
@@ -101,46 +154,12 @@ export function VerificationTable() {
     );
   };
 
-  const renderStatusBadge = (status: VerificationStatus) => {
-    const config = {
-      "Resubmission Required": {
-        bg: "bg-amber-400/20",
-        border: "outline-amber-300/50",
-        text: "text-amber-700",
-        dot: "bg-amber-500",
-      },
-      Pending: {
-        bg: "bg-sky-50",
-        border: "outline-sky-200",
-        text: "text-sky-600",
-        dot: "bg-sky-500",
-      },
-      Approved: {
-        bg: "bg-emerald-50",
-        border: "outline-emerald-200",
-        text: "text-emerald-700",
-        dot: "bg-emerald-500",
-      },
-      Rejected: {
-        bg: "bg-rose-50",
-        border: "outline-rose-200",
-        text: "text-rose-600",
-        dot: "bg-rose-500",
-      },
-    }[status];
+  const handleViewDetailsModal = () => {
+    setViewDetailsModal(true);
+  };
 
-    return (
-      <div
-        className={`inline-flex h-5 items-center gap-1 rounded-sm px-2 py-0.5 outline outline-1 outline-offset-[-1px] ${config.bg} ${config.border}`}
-      >
-        <span className={`h-1.5 w-1.5 rounded-full ${config.dot}`} />
-        <span
-          className={`font-['Manrope'] text-xs font-medium leading-4 ${config.text}`}
-        >
-          {status}
-        </span>
-      </div>
-    );
+  const handleApprovedModal = () => {
+    setApprovedModal(true);
   };
 
   const columns: Column<VerificationRecord>[] = [
@@ -257,7 +276,7 @@ export function VerificationTable() {
       cell: (item) => (
         <button
           type="button"
-          onClick={() => console.log("View details for", item.id)}
+          onClick={handleViewDetailsModal}
           className="inline-flex h-8 items-center justify-center rounded-lg border border-slate-200 bg-white px-3 py-1.5 transition-colors hover:bg-slate-50"
         >
           <span className="font-['Manrope'] text-xs font-medium leading-3 text-slate-700">
@@ -275,6 +294,8 @@ export function VerificationTable() {
         onExportClick={() => console.log("Export clicked")}
         filterSchema={verificationFilterSchema}
       />
+
+
       <div>
         <DataTable
           columns={columns}
@@ -282,8 +303,27 @@ export function VerificationTable() {
           pagination={false}
         />
       </div>
+
+
+    
+      <VerificationModal
+        open={viewDetailsModal}
+        onOpenChange={setViewDetailsModal}
+        onApproved={handleApprovedModal}
+      />
+
+      <CustomModal
+        open={approvedModal}
+        onOpenChange={setApprovedModal}
+        size="sm"
+        showCloseButton={false}
+        className="max-w-[367px] p-5 font-['Manrope']"
+      >
+        <VerificationDecisionPanel
+          onConfirm={() => setApprovedModal(false)}
+          onCancel={() => setApprovedModal(false)}
+        />
+      </CustomModal>
     </div>
   );
 }
-
-export default VerificationTable;
