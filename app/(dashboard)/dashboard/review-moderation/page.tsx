@@ -1,10 +1,9 @@
-import { PagePlaceholder } from "@/components/Pages/Dashboard/PagePlaceholder";
+import ReviewModerationTable from "@/components/Pages/ReviewModeration/ReviewModerationTable";
 
 export default function ReviewModerationPage() {
   return (
-    <PagePlaceholder
-      title="Review Moderation"
-      subtitle="Moderate user reviews"
-    />
+    <>
+      <ReviewModerationTable />
+    </>
   );
 }

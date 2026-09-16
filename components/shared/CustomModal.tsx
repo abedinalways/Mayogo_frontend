@@ -16,11 +16,11 @@ import { cn } from "@/lib/utils";
 type Size = "xsm" | "sm" | "md" | "mmd" | "lg" | "xl" | "full";
 
 const SIZE_CLASSES: Record<Size, string> = {
-    xsm: "sm:max-w-[500px]",
-    sm: "sm:max-w-[580px]",
+    xsm: "sm:max-w-[460px]",
+    sm: "sm:max-w-[384px]",
     md: "sm:max-w-[680px]",
     mmd: "sm:max-w-[684px]",
-    lg: "sm:max-w-[858px]",
+    lg: "sm:max-w-[918px]",
     xl: "sm:max-w-[1024px]",
     full: "sm:max-w-[min(96vw,1200px)]",
 };
@@ -125,7 +125,7 @@ export default function CustomModal({
                 showCloseButton={false}
                 className={cn(
                     "flex flex-col gap-6 overflow-hidden rounded-2xl bg-white",
-                    "px-4 py-5 md:px-8 md:py-8",
+                    "p-5",
                     "max-h-[95vh]",
                     SIZE_CLASSES[size],
                     className,
