@@ -1,10 +1,10 @@
+import AdminUserTable from "@/components/Pages/AdminUsers/AdminUserTable";
 import { PagePlaceholder } from "@/components/Pages/Dashboard/PagePlaceholder";
 
 export default function AdminUsersPage() {
   return (
-    <PagePlaceholder
-      title="Admin Users"
-      subtitle="Manage console administrators"
-    />
+    <>
+      <AdminUserTable />
+    </>
   );
 }

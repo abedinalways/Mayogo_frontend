@@ -37,6 +37,7 @@ export interface TableToolbarProps {
   filterSchema?: FilterField[];
   onFilterChange?: (value: FilterValues) => void;
   onExportClick?: () => void;
+  actionButton?: React.ReactNode;
 }
 
 export function TableToolbar({
@@ -51,6 +52,7 @@ export function TableToolbar({
   filterSchema,
   onFilterChange,
   onExportClick,
+  actionButton,
 }: TableToolbarProps) {
   const schema = filterSchema ?? defaultFilterSchema;
   const [sort, setSort] = useState<string | undefined>(undefined);
@@ -98,8 +100,7 @@ export function TableToolbar({
             setSort(value);
             onSortChange?.(value);
           }}
-        
-       />
+        />
       )}
 
       {/* 4. Panel Filter Type (Expandable Panel with Checkboxes/Radios/Chips) */}
@@ -133,9 +134,26 @@ export function TableToolbar({
     </div>
   );
 
+  const rightSideActions = (
+    <div className="flex items-center gap-3">
+      {onExportClick && (
+        <button
+          type="button"
+          onClick={onExportClick}
+          className="flex h-10 items-center gap-2 rounded-lg bg-[#0f3453] px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-[#0b2841]"
+        >
+          <Download className="h-4 w-4 text-white" />
+          <span>Export</span>
+          <ChevronDown className="h-4 w-4 text-white" />
+        </button>
+      )}
+      {actionButton}
+    </div>
+  );
+
   return (
     <div className="flex w-full flex-wrap items-center justify-between gap-4 border border-b-0 border-[#e4ebf1] p-4 font-['Manrope'] rounded-t-lg">
-      {/* Title / Action Toggle */}
+      {/* Left side: Title or Actions */}
       {hasTitle ? (
         <h2 className="text-[#103D5C] text-lg font-semibold leading-[132%]">
           {title}
@@ -144,21 +162,14 @@ export function TableToolbar({
         actions
       )}
 
-      {/* Export / Right Actions Toggle */}
+      {/* Right side: Actions + Export / Custom Action Button */}
       {hasTitle ? (
-        actions
+        <div className="flex items-center gap-4">
+          {actions}
+          {rightSideActions}
+        </div>
       ) : (
-        onExportClick && (
-          <button
-            type="button"
-            onClick={onExportClick}
-            className="flex h-10 items-center gap-2 rounded-lg bg-[#0f3453] px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-[#0b2841]"
-          >
-            <Download className="h-4 w-4 text-white" />
-            <span>Export</span>
-            <ChevronDown className="h-4 w-4 text-white" />
-          </button>
-        )
+        rightSideActions
       )}
     </div>
   );

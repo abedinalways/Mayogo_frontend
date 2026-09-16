@@ -16,7 +16,7 @@ import { cn } from "@/lib/utils";
 type Size = "xsm" | "sm" | "md" | "mmd" | "lg" | "xl" | "full";
 
 const SIZE_CLASSES: Record<Size, string> = {
-    xsm: "sm:max-w-[500px]",
+    xsm: "sm:max-w-[460px]",
     sm: "sm:max-w-[384px]",
     md: "sm:max-w-[680px]",
     mmd: "sm:max-w-[684px]",
