@@ -7,6 +7,9 @@ import { Column, DataTable } from "../../shared/DataTable";
 import TableToolbar from "../../shared/TableToolbar";
 import { expertsFilterSchema } from "../../shared/filter-presets";
 import Link from "next/link";
+import { strict } from "assert";
+import { StatusBadge } from "@/components/shared/StatusBadge";
+import ExpertPayoutDetailsModal from "./ExpertPayoutDetailsModal";
 
 export type VerificationStatus =
   | "Level 1 verified"
@@ -14,8 +17,6 @@ export type VerificationStatus =
   | "Level 3 verified"
   | "Level 4 verified"
   | "Pending";
-
-export type ExpertStatus = "Active" | "Busy" | "Inactive";
 
 export interface ExpertRecord {
   id: string;
@@ -30,15 +31,21 @@ export interface ExpertRecord {
   };
   category: string;
   requestAmount: string;
+  availableBalance: string;
   method: string;
+  accountName: string;
+  accountNumber: string;
   date: string;
-  status: ExpertStatus;
+  status: string;
+  rejectedBy?: string;
+  rejectedDate?: string;
+  rejectionNote?: string;
 }
 
 const sampleExperts: ExpertRecord[] = [
   {
     id: "1",
-    expertId: "#E124",
+    expertId: "#EXP001",
     expert: {
       name: "Daniel Green",
       avatar:
@@ -46,86 +53,86 @@ const sampleExperts: ExpertRecord[] = [
     },
     contact: {
       phone: "999-(1234)-555",
-      email: "sarahwilliam@gmail.com",
+      email: "danielgreen@gmail.com",
+    },
+    category: "Construction & Property",
+    requestAmount: "$4,000",
+    availableBalance: "$6,000",
+    method: "Bank Transfer",
+    accountName: "Daniel Green",
+    accountNumber: "074******87",
+    date: "Jul 27, 2026",
+    status: "Rejected",
+    rejectedBy: "Admin",
+    rejectedDate: "Jul 27, 2026",
+    rejectionNote: "Account information mismatch.",
+  },
+  {
+    id: "2",
+    expertId: "#EXP002",
+    expert: {
+      name: "Sarah Williams",
+      avatar:
+        "https://images.unsplash.com/photo-1508214751196-bcfd4ca60f91?w=100&auto=format&fit=crop&q=80",
+    },
+    contact: {
+      phone: "999-(5678)-111",
+      email: "sarahwilliams@gmail.com",
     },
     category: "Construction & Property",
     requestAmount: "$2,450",
+    availableBalance: "$5,200",
     method: "Bank Transfer",
+    accountName: "Sarah Williams",
+    accountNumber: "082******34",
     date: "Jul 27, 2026",
-    status: "Active",
+    status: "Rejected",
+    rejectedBy: "Admin",
+    rejectedDate: "Jul 28, 2026",
+    rejectionNote: "Account information mismatch.",
   },
-  // {
-  //     id: "2",
-  //     expertId: "#E124",
-  //     expert: {
-  //         name: "Daniel Green",
-  //         avatar:
-  //             "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&auto=format&fit=crop&q=80",
-  //     },
-  //     contact: {
-  //         phone: "999-(1234)-555",
-  //         email: "sarahwilliam@gmail.com",
-  //     },
-  //     category: "Construction & Property",
-  //     verification: "Level 2 verified",
-  //     jobs: 24,
-  //     earnings: "$2,450",
-  //     status: "Busy",
-  // },
-  // {
-  //     id: "3",
-  //     expertId: "#E124",
-  //     expert: {
-  //         name: "Daniel Green",
-  //         avatar:
-  //             "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&auto=format&fit=crop&q=80",
-  //     },
-  //     contact: {
-  //         phone: "999-(1234)-555",
-  //         email: "sarahwilliam@gmail.com",
-  //     },
-  //     category: "Construction & Property",
-  //     verification: "Pending",
-  //     jobs: 24,
-  //     earnings: "$2,450",
-  //     status: "Active",
-  // },
-  // {
-  //     id: "4",
-  //     expertId: "#E124",
-  //     expert: {
-  //         name: "Daniel Green",
-  //         avatar:
-  //             "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&auto=format&fit=crop&q=80",
-  //     },
-  //     contact: {
-  //         phone: "999-(1234)-555",
-  //         email: "sarahwilliam@gmail.com",
-  //     },
-  //     category: "Construction & Property",
-  //     verification: "Level 4 verified",
-  //     jobs: 24,
-  //     earnings: "$2,450",
-  //     status: "Active",
-  // },
-  // {
-  //     id: "5",
-  //     expertId: "#E124",
-  //     expert: {
-  //         name: "Daniel Green",
-  //         avatar:
-  //             "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&auto=format&fit=crop&q=80",
-  //     },
-  //     contact: {
-  //         phone: "999-(1234)-555",
-  //         email: "sarahwilliam@gmail.com",
-  //     },
-  //     category: "Construction & Property",
-  //     verification: "Level 1 verified",
-  //     jobs: 24,
-  //     earnings: "$2,450",
-  //     status: "Inactive",
-  // },
+  {
+    id: "3",
+    expertId: "#EXP003",
+    expert: {
+      name: "Alex Morgan",
+      avatar:
+        "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&auto=format&fit=crop&q=80",
+    },
+    contact: {
+      phone: "999-(9012)-222",
+      email: "alexmorgan@gmail.com",
+    },
+    category: "Construction & Property",
+    requestAmount: "$4,000",
+    availableBalance: "$6,000",
+    method: "Bank Transfer",
+    accountName: "Alex Morgan",
+    accountNumber: "074******87",
+    date: "Jul 27, 2026",
+    status: "Pending",
+  },
+  {
+    id: "4",
+    expertId: "#EXP004",
+    expert: {
+      name: "James Carter",
+      avatar:
+        "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=100&auto=format&fit=crop&q=80",
+    },
+    contact: {
+      phone: "999-(3456)-333",
+      email: "jamescarter@gmail.com",
+    },
+    category: "Construction & Property",
+    requestAmount: "$2,450",
+    availableBalance: "$8,100",
+    method: "Bank Transfer",
+    accountName: "James Carter",
+    accountNumber: "091******52",
+    date: "Jul 27, 2026",
+    status: "Approved",
+  },
 ];
 
 export function ExpertPayoutTable() {
@@ -133,6 +140,15 @@ export function ExpertPayoutTable() {
   const [searchTerm, setSearchTerm] = useState("");
   const [sortBy, setSortBy] = useState<string>("");
   const [filter, setFilter] = useState<string>("");
+
+  // Modal state
+  const [selectedExpert, setSelectedExpert] = useState<ExpertRecord | null>(null);
+  const [detailsModalOpen, setDetailsModalOpen] = useState(false);
+
+  const handleViewDetails = (expert: ExpertRecord) => {
+    setSelectedExpert(expert);
+    setDetailsModalOpen(true);
+  };
 
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setSearchTerm(e.target.value);
@@ -165,38 +181,6 @@ export function ExpertPayoutTable() {
       <span className="inline-flex items-center rounded bg-emerald-50 px-2.5 py-1 font-['Manrope'] text-xs font-medium text-emerald-600 outline outline-1 outline-offset-[-1px] outline-emerald-200">
         {verification}
       </span>
-    );
-  };
-
-  const renderStatusBadge = (status: ExpertStatus) => {
-    const config = {
-      Active: {
-        bg: "bg-sky-50",
-        border: "border-sky-200",
-        text: "text-sky-600",
-        dot: "bg-sky-500",
-      },
-      Busy: {
-        bg: "bg-amber-50",
-        border: "border-amber-200",
-        text: "text-amber-600",
-        dot: "bg-amber-500",
-      },
-      Inactive: {
-        bg: "bg-rose-50",
-        border: "border-rose-200",
-        text: "text-rose-500",
-        dot: "bg-rose-500",
-      },
-    }[status];
-
-    return (
-      <div
-        className={`inline-flex items-center gap-1.5 rounded-md border px-2.5 py-1 text-xs font-semibold font-['Manrope'] ${config.bg} ${config.border} ${config.text}`}
-      >
-        <span className={`h-1.5 w-1.5 rounded-full ${config.dot}`} />
-        {status}
-      </div>
     );
   };
 
@@ -290,19 +274,19 @@ export function ExpertPayoutTable() {
       key: "status",
       header: "Status",
       className: "min-w-[120px]",
-      cell: (item) => renderStatusBadge(item.status),
+      cell: (item) => <StatusBadge status={item.status} />,
     },
     {
       key: "action",
       header: "Action",
       className: "w-28 min-w-[110px] text-center",
       cell: (item) => (
-        <Link
-          href={`/dashboard/expert-payouts/${item.id}`}
-          className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-600 transition-colors hover:bg-slate-50 hover:text-slate-900 text-nowrap"
+        <span
+          onClick={() => handleViewDetails(item)}
+          className="cursor-pointer rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-600 transition-colors hover:bg-slate-50 hover:text-slate-900 text-nowrap"
         >
           View Details
-        </Link>
+        </span>
       ),
     },
   ];
@@ -322,6 +306,13 @@ export function ExpertPayoutTable() {
       <div>
         <DataTable columns={columns} data={sampleExperts} pagination={false} />
       </div>
+
+      {/* Modal 1: Review Withdrawal Request (Modal 2 is rendered inside it) */}
+      <ExpertPayoutDetailsModal
+        open={detailsModalOpen}
+        onOpenChange={setDetailsModalOpen}
+        expert={selectedExpert}
+      />
     </div>
   );
 }

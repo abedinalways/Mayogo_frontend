@@ -8,13 +8,18 @@ import {
   type SortOption,
 } from "./SortDropdown";
 import { FilterDropdown } from "./FilterDropdown";
-import { getDefaultFilterValues, type FilterField, type FilterValues } from "./filter-schema";
+import {
+  getDefaultFilterValues,
+  type FilterField,
+  type FilterValues,
+} from "./filter-schema";
 import { defaultFilterSchema } from "./filter-presets";
 
 export interface TableToolbarProps {
   title?: string;
   searchQuery?: string;
   onSearchChange?: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  searchPlaceholder?: string;
   onSortClick?: () => void;
   sortOptions?: SortOption[];
   onSortChange?: (value: string) => void;
@@ -22,12 +27,14 @@ export interface TableToolbarProps {
   filterSchema?: FilterField[];
   onFilterChange?: (value: FilterValues) => void;
   onExportClick?: () => void;
+  children?: React.ReactNode;
 }
 
 export function TableToolbar({
   title,
   searchQuery,
   onSearchChange,
+  searchPlaceholder = "Search Clients",
   onSortClick,
   sortOptions = defaultSortOptions,
   onSortChange,
@@ -35,6 +42,7 @@ export function TableToolbar({
   filterSchema,
   onFilterChange,
   onExportClick,
+  children,
 }: TableToolbarProps) {
   const schema = filterSchema ?? defaultFilterSchema;
   const [sort, setSort] = useState<string | undefined>(undefined);
@@ -46,17 +54,19 @@ export function TableToolbar({
 
   const actions = (
     <div className="flex flex-wrap items-center gap-4">
-      <label className="flex h-10 w-40 items-center gap-2 rounded-lg border border-[#e4ebf1] bg-white px-4 py-2.5">
-        <span className="sr-only">Search Clients</span>
+      <label className="flex h-10 w-40 sm:w-60 items-center gap-2 rounded-lg border border-[#e4ebf1] bg-white px-4 py-2.5">
+        <span className="sr-only">{searchPlaceholder}</span>
         <Search className="h-4 w-4 shrink-0 text-[#9aaab5]" />
         <input
           type="text"
-          placeholder="Search Clients"
+          placeholder={searchPlaceholder}
           value={searchQuery}
           onChange={onSearchChange}
           className="w-full bg-transparent text-xs font-normal text-[#0f3453] placeholder:text-[#9aaab5] outline-none"
         />
       </label>
+
+      {children}
 
       {onSortClick && (
         <SortDropdown
@@ -92,21 +102,19 @@ export function TableToolbar({
         actions
       )}
 
-      {hasTitle ? (
-        actions
-      ) : (
-        onExportClick && (
-          <button
-            type="button"
-            onClick={onExportClick}
-            className="flex h-10 items-center gap-2 rounded-lg bg-[#0f3453] px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-[#0b2841]"
-          >
-            <Download className="h-4 w-4 text-white" />
-            <span>Export</span>
-            <ChevronDown className="h-4 w-4 text-white" />
-          </button>
-        )
-      )}
+      {hasTitle
+        ? actions
+        : onExportClick && (
+            <button
+              type="button"
+              onClick={onExportClick}
+              className="flex h-10 items-center gap-2 rounded-lg bg-[#0f3453] px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-[#0b2841]"
+            >
+              <Download className="h-4 w-4 text-white" />
+              <span>Export</span>
+              <ChevronDown className="h-4 w-4 text-white" />
+            </button>
+          )}
     </div>
   );
 }
