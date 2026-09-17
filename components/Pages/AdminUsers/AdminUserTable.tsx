@@ -273,6 +273,7 @@ export function FullUsersTable() {
                         ],
                         onChange: (val) => setStatusFilter(val),
                     },
+                  
                 ]}
 
                 onSortClick={() => { }}

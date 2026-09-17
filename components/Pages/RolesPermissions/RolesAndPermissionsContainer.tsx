@@ -1,6 +1,7 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import { useSearchParams } from "next/navigation";
 import {
   RolesAndPermissionsHeader,
   RoleType,
@@ -59,8 +60,19 @@ const INITIAL_PERMISSIONS: Record<RoleType, ModuleGroup[]> = {
 };
 
 export function RolesAndPermissionsContainer() {
-  const [activeRole, setActiveRole] = useState<RoleType>("super-admin");
+  const searchParams = useSearchParams();
+  const roleParam = searchParams.get("role");
+  const validRole: RoleType =
+    roleParam === "admin" || roleParam === "super-admin" ? roleParam : "super-admin";
+
+  const [activeRole, setActiveRole] = useState<RoleType>(validRole);
   const [permissions, setPermissions] = useState(INITIAL_PERMISSIONS);
+
+  useEffect(() => {
+    if (roleParam === "admin" || roleParam === "super-admin") {
+      setActiveRole(roleParam);
+    }
+  }, [roleParam]);
 
   const handleTogglePermission = (
     moduleIdx: number,
