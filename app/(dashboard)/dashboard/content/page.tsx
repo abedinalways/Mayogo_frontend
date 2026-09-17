@@ -1,10 +1,7 @@
-import { PagePlaceholder } from "@/components/Pages/Dashboard/PagePlaceholder";
+import ContentManagementContainer from "@/components/Pages/ContentManagement/ContentManagementContainer";
 
 export default function ContentManagementPage() {
-  return (
-    <PagePlaceholder
-      title="Content Management"
-      subtitle="Update platform content"
-    />
-  );
+  return <ContentManagementContainer />;
 }
+
+

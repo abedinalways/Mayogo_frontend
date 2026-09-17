@@ -28,6 +28,7 @@ export function RolesAndPermissionsHeader({
         ]}
         value={activeRole}
         onChange={onRoleChange}
+        paramKey="role"
       />
 
       {/* Save Button */}
