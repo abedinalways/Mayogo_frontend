@@ -1,10 +1,6 @@
-import { PagePlaceholder } from "@/components/Pages/Dashboard/PagePlaceholder";
+import SettingsContainer from "@/components/Pages/Settings/SettingsContainer";
 
 export default function SettingsPage() {
-  return (
-    <PagePlaceholder
-      title="Settings"
-      subtitle="Adjust platform settings"
-    />
-  );
+  return <SettingsContainer />;
 }
+

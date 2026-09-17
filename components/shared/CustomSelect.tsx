@@ -30,6 +30,7 @@ export interface CustomSelectProps {
     triggerClassName?: string;
     contentClassName?: string;
     itemClassName?: string;
+    isRequired?: boolean;
 }
 
 export function CustomSelect({
@@ -46,6 +47,7 @@ export function CustomSelect({
     triggerClassName = "",
     contentClassName = "",
     itemClassName = "",
+    isRequired,
 }: CustomSelectProps) {
     const selectId = React.useId();
 
@@ -59,9 +61,12 @@ export function CustomSelect({
             {label && (
                 <label
                     htmlFor={selectId}
-                    className="text-sm font-normal text-slate-600 leading-6"
+                    className="text-sm font-normal text-slate-600 leading-6 inline-flex items-center gap-0.5"
                 >
-                    {label}
+                    <span>{label}</span>
+                    {isRequired && (
+                        <span className="text-red-500 text-base font-medium font-['Work_Sans'] leading-6">*</span>
+                    )}
                 </label>
             )}
 
