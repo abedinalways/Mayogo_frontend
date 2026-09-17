@@ -123,7 +123,7 @@ export function AnnouncementsTab() {
 
   const handleSelectRow = (id: string) => {
     setSelectedIds((prev) =>
-      prev.includes(id) ? prev.filter((item) => item !== id) : [...prev, id]
+      prev.includes(id) ? prev.filter((item) => item !== id) : [...prev, id],
     );
   };
 
@@ -158,8 +158,8 @@ export function AnnouncementsTab() {
                 audience: data.audience || item.audience || "All",
                 status: data.status,
               }
-            : item
-        )
+            : item,
+        ),
       );
     }
     setIsEditModalOpen(false);
@@ -170,10 +170,10 @@ export function AnnouncementsTab() {
   const handleDeleteConfirm = () => {
     if (announcementToDelete) {
       setAnnouncements((prev) =>
-        prev.filter((item) => item.id !== announcementToDelete.id)
+        prev.filter((item) => item.id !== announcementToDelete.id),
       );
       setSelectedIds((prev) =>
-        prev.filter((id) => id !== announcementToDelete.id)
+        prev.filter((id) => id !== announcementToDelete.id),
       );
       setAnnouncementToDelete(null);
     }
@@ -402,4 +402,3 @@ export function AnnouncementsTab() {
 }
 
 export default AnnouncementsTab;
-
