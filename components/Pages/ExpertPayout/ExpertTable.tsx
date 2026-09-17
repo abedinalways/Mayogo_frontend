@@ -142,7 +142,9 @@ export function ExpertPayoutTable() {
   const [filter, setFilter] = useState<string>("");
 
   // Modal state
-  const [selectedExpert, setSelectedExpert] = useState<ExpertRecord | null>(null);
+  const [selectedExpert, setSelectedExpert] = useState<ExpertRecord | null>(
+    null,
+  );
   const [detailsModalOpen, setDetailsModalOpen] = useState(false);
 
   const handleViewDetails = (expert: ExpertRecord) => {

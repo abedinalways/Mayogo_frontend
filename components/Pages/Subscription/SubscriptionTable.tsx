@@ -46,7 +46,6 @@ const sampleSubscriptions: SubscriptionRecord[] = [
     expiryDate: "12 Jul, 2026",
     status: "Active",
   },
-
   {
     id: "3",
     expert: {

@@ -16,13 +16,13 @@ import { cn } from "@/lib/utils";
 type Size = "xsm" | "sm" | "md" | "mmd" | "lg" | "xl" | "full";
 
 const SIZE_CLASSES: Record<Size, string> = {
-  xsm: "sm:max-w-[460px]",
-  sm: "sm:max-w-[384px]",
-  md: "sm:max-w-[680px]",
-  mmd: "sm:max-w-[684px]",
-  lg: "sm:max-w-[918px]",
-  xl: "sm:max-w-[1024px]",
-  full: "sm:max-w-[min(96vw,1200px)]",
+    xsm: "sm:max-w-[460px]",
+    sm: "sm:max-w-[384px]",
+    md: "sm:max-w-[680px]",
+    mmd: "sm:max-w-[684px]",
+    lg: "sm:max-w-[918px]",
+    xl: "sm:max-w-[1024px]",
+    full: "sm:max-w-[min(96vw,1200px)]",
 };
 
 type CloseButtonConfig =
@@ -110,25 +110,25 @@ export default function CustomModal({
     <ShadcnCloseButton {...props.closeButtonProps} />
   );
 
-  return (
-    <Dialog
-      open={open}
-      onOpenChange={(next) => {
-        if (preventClose && !next) return;
-        onOpenChange(next);
-      }}
-    >
-      <DialogContent
-        showCloseButton={false}
-        className={cn(
-          "flex flex-col gap-6 overflow-hidden rounded-2xl bg-white",
-          "p-5",
-          "max-h-[95vh]",
-          SIZE_CLASSES[size],
-          className,
-        )}
-      >
-        {/* Accessible name/description always exist, even when the
+    return (
+        <Dialog
+            open={open}
+            onOpenChange={(next) => {
+                if (preventClose && !next) return;
+                onOpenChange(next);
+            }}
+        >
+            <DialogContent
+                showCloseButton={false}
+                className={cn(
+                    "flex flex-col gap-6 overflow-hidden rounded-2xl bg-white",
+                    "p-5",
+                    "max-h-[95vh]",
+                    SIZE_CLASSES[size],
+                    className,
+                )}
+            >
+                {/* Accessible name/description always exist, even when the
                     header row below doesn't render (no visible title, no
                     close button) — the dialog needs a DialogTitle regardless. */}
         {!title && <DialogTitle className="sr-only">Dialog</DialogTitle>}
