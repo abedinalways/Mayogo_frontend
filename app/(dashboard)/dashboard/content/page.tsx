@@ -1,7 +1,10 @@
+import { Suspense } from "react";
 import ContentManagementContainer from "@/components/Pages/ContentManagement/ContentManagementContainer";
 
 export default function ContentManagementPage() {
-  return <ContentManagementContainer />;
+  return (
+    <Suspense fallback={null}>
+      <ContentManagementContainer />
+    </Suspense>
+  );
 }
-
-
