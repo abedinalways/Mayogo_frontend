@@ -9,11 +9,14 @@ import {
   Plus,
   Pencil,
   SquarePen,
+  PlusIcon,
 } from "lucide-react";
 import { Column, DataTable } from "@/components/shared/DataTable";
 import AddServiceModal from "./AddServiceModal";
 import EditServiceModal from "./EditServiceModal";
 import { sampleServices, type ServiceRecord } from "./ServiceData";
+import TableToolbar from "@/components/shared/TableToolbar";
+import CustomButton from "@/components/shared/CustomButton";
 
 // ── Toggle Switch ──────────────────────────────────────────────────────────
 function ToggleSwitch({
@@ -52,6 +55,12 @@ export default function ServiceTable() {
     null,
   );
   const [searchTerm, setSearchTerm] = useState("");
+  const [statusFilter, setStatusFilter] = useState<string>("");
+  const [statusCategory, setStatusCategory] = useState<string>("");
+
+  const handleOpenAdd = () => {
+    setAddOpen(true);
+  };
 
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setSearchTerm(e.target.value);
@@ -102,7 +111,7 @@ export default function ServiceTable() {
       className: "min-w-[200px]",
       cell: (item) => (
         <div className="flex items-center gap-3">
-          <div className="relative h-10 w-10 shrink-0 overflow-hidden rounded-lg border border-slate-100">
+          <div className="relative h-10 w-10 shrink-0 overflow-hidden rounded-sm border border-[#F5B517]">
             <Image
               src={item.image}
               alt={item.name}
@@ -194,51 +203,58 @@ export default function ServiceTable() {
   return (
     <div className="space-y-4">
       {/* ── Toolbar ── */}
-      <div className="flex flex-wrap items-center gap-3">
-        <div className="flex h-9 flex-1 items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 min-w-[180px] max-w-[260px]">
-          <Search size={15} className="shrink-0 text-slate-400" />
-          <input
-            type="text"
-            placeholder="Search Services"
-            value={searchTerm}
-            onChange={handleSearchChange}
-            className="flex-1 bg-transparent text-sm text-slate-700 placeholder-slate-400 focus:outline-none font-['Manrope']"
-          />
-        </div>
 
-        <button
-          type="button"
-          className="flex h-9 items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 text-sm font-medium text-slate-700 hover:bg-slate-50 font-['Manrope']"
-        >
-          All Categories <ChevronDown size={14} className="text-slate-400" />
-        </button>
+      <TableToolbar
+        searchQuery={searchTerm}
+        onSearchChange={(e) => setSearchTerm(e.target.value)}
+        dropdownFilters={[
+          {
+            placeholder: "All Status",
+            value: statusFilter,
+            options: [
+              { label: "All Status", value: "" },
+              { label: "Active", value: "active" },
+              { label: "Inactive", value: "inactive" },
+            ],
+            onChange: (val) => setStatusFilter(val),
+          },
 
-        <button
-          type="button"
-          className="flex h-9 items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 text-sm font-medium text-slate-700 hover:bg-slate-50 font-['Manrope']"
-        >
-          All Status <ChevronDown size={14} className="text-slate-400" />
-        </button>
-
-        <button
-          type="button"
-          className="flex h-9 items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 text-sm font-medium text-slate-700 hover:bg-slate-50 font-['Manrope']"
-        >
-          <ArrowUpDown size={14} className="text-slate-400" />
-          Sort by <ChevronDown size={14} className="text-slate-400" />
-        </button>
-
-        <div className="flex-1" />
-
-        <button
-          type="button"
-          onClick={() => setAddOpen(true)}
-          className="flex h-9 items-center gap-1.5 rounded-lg bg-[#0a3558] px-4 text-sm font-semibold text-white hover:bg-[#07253e] active:scale-[0.98] transition-colors font-['Manrope']"
-        >
-          <Plus size={15} />
-          Add New Service
-        </button>
-      </div>
+          {
+            placeholder: "All Category",
+            value: statusCategory,
+            options: [
+              { label: "All Category", value: "" },
+              { label: "Home Services", value: "home" },
+              { label: "Repair & Diagnostic", value: "repair" },
+              { label: "Installation", value: "installation" },
+              { label: "Education & Tutoring", value: "education" },
+              { label: "Care Services", value: "care" },
+              { label: "Construction & Property", value: "construction" },
+              { label: "Remote Development", value: "development" },
+            ],
+            onChange: (val) => setStatusFilter(val),
+          },
+        ]}
+        onSortClick={() => {}}
+        actionButton={
+          <CustomButton
+            onClick={handleOpenAdd}
+            size="md"
+            leadingIcon={<PlusIcon />}
+          >
+            {" "}
+            Add New Service
+          </CustomButton>
+        }
+      />
+      {/* <button
+        type="button"
+        onClick={() => setAddOpen(true)}
+        className="flex h-9 items-center gap-1.5 rounded-lg bg-[#0a3558] px-4 text-sm font-semibold text-white hover:bg-[#07253e] active:scale-[0.98] transition-colors font-['Manrope']"
+      >
+        <Plus size={15} />
+        Add New Service
+      </button> */}
 
       {/* ── Table ── */}
       <DataTable columns={columns} data={services} pagination={false} />

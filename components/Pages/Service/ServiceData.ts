@@ -26,13 +26,18 @@ export const CATEGORY_TEMPLATE_FIELDS: Record<string, string[]> = {
   "Home Services": [
     "Job Details",
     "Job Descriptions",
+    "Property Size",
+    "Frequency",
     "Special Instructions",
     "Upload Images",
   ],
   "Repair & Diagnostic": [
     "Job Details",
     "Job Descriptions",
-    "Service Type",
+    "Property Type",
+    "Number of Items",
+    "Model/Brand Name",
+    "Existing Setup Available",
     "Upload Images",
   ],
   Installation: [
@@ -54,21 +59,24 @@ export const CATEGORY_TEMPLATE_FIELDS: Record<string, string[]> = {
   "Care Services": [
     "Job Details",
     "Job Descriptions",
-    "Frequency",
+    "Duration",
+    "Responsibilities",
     "Special Instructions",
     "Upload Images",
   ],
   "Construction & Property": [
     "Job Details",
     "Job Descriptions",
-    "Service Type",
-    "Special Instructions",
+    "Property Size",
+    "Material Provided By",
     "Upload Images",
   ],
   "Remote Development": [
     "Job Details",
     "Job Descriptions",
-    "Service Type",
+    "Property Size",
+    "Frequency",
+    "Special Instructions",
     "Upload Images",
   ],
 };
