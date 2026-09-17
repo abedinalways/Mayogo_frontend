@@ -76,6 +76,18 @@ const statusStyles: Record<
     text: "text-[#EB3D4D]",
     dot: "bg-rose-500",
   },
+  approved: {
+    bg: "bg-emerald-50",
+    border: "outline-emerald-200",
+    text: "text-emerald-700",
+    dot: "bg-emerald-500",
+  },
+  rejected: {
+    bg: "bg-[#FFF5F7]",
+    border: "outline-[#FDDDE2]",
+    text: "text-[#EB3D4D]",
+    dot: "bg-[#EB3D4D]",
+  },
 };
 
 const defaultStyle = {
