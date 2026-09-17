@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { Check } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
@@ -13,21 +13,13 @@ import {
 } from "./filter-schema";
 import { defaultFilterSchema } from "./filter-presets";
 
-export type {
-  FilterField,
-  FilterOption,
-  FilterValues,
-} from "./filter-schema";
-export { getDefaultFilterValues } from "./filter-schema";
-export { defaultFilterSchema } from "./filter-presets";
-
-export type FilterPanelProps = {
+export interface FilterPanelProps {
   open?: boolean;
   schema?: FilterField[];
   value?: FilterValues;
   onApply: (value: FilterValues) => void;
   onCancel: () => void;
-};
+}
 
 function CheckOption({
   label,
@@ -48,7 +40,7 @@ function CheckOption({
       />
       <span
         className={cn(
-          "flex h-[18px] w-[18px] shrink-0 items-center justify-center rounded-[4px] border",
+          "flex h-[18px] w-[18px] shrink-0 items-center justify-center rounded-[4px] border transition-colors",
           checked
             ? "border-[#e9b83f] bg-[#e9b83f]"
             : "border-[#d3dbe3] bg-white",
@@ -80,8 +72,10 @@ function RadioOption({
       />
       <span
         className={cn(
-          "flex h-[18px] w-[18px] shrink-0 items-center justify-center rounded-full border",
-          checked ? "border-[#e9b83f] bg-[#e9b83f]" : "border-[#d3dbe3] bg-white",
+          "flex h-[18px] w-[18px] shrink-0 items-center justify-center rounded-full border transition-colors",
+          checked
+            ? "border-[#e9b83f] bg-[#e9b83f]"
+            : "border-[#d3dbe3] bg-white",
         )}
       />
       <span className="text-sm font-normal text-[#123e5e]">{label}</span>
@@ -103,7 +97,7 @@ function ChipOption({
       type="button"
       onClick={onChange}
       className={cn(
-        "rounded-lg border border-[#0a3558] px-2 py-1 text-xs font-medium transition-colors",
+        "rounded-lg border border-[#0a3558] px-2.5 py-1 text-xs font-medium transition-colors",
         checked ? "bg-[#0a3558] text-white" : "bg-white text-[#0a3558]",
       )}
     >
@@ -145,28 +139,32 @@ function FilterFieldGroup({
           ))}
         </div>
       ) : field.type === "radio" ? (
-        field.options.map((option) => (
-          <RadioOption
-            key={option.value}
-            label={option.label}
-            checked={selectedSingle === option.value}
-            onChange={() => onChange(field.id, option.value)}
-          />
-        ))
+        <div className="space-y-2">
+          {field.options.map((option) => (
+            <RadioOption
+              key={option.value}
+              label={option.label}
+              checked={selectedSingle === option.value}
+              onChange={() => onChange(field.id, option.value)}
+            />
+          ))}
+        </div>
       ) : (
-        field.options.map((option) => (
-          <CheckOption
-            key={option.value}
-            label={option.label}
-            checked={selected.includes(option.value)}
-            onChange={() =>
-              onChange(
-                field.id,
-                toggleMultiValue(selected, option.value, field.allValue),
-              )
-            }
-          />
-        ))
+        <div className="space-y-2">
+          {field.options.map((option) => (
+            <CheckOption
+              key={option.value}
+              label={option.label}
+              checked={selected.includes(option.value)}
+              onChange={() =>
+                onChange(
+                  field.id,
+                  toggleMultiValue(selected, option.value, field.allValue),
+                )
+              }
+            />
+          ))}
+        </div>
       )}
     </div>
   );
@@ -180,40 +178,47 @@ export function FilterPanel({
   onCancel,
 }: FilterPanelProps) {
   const defaults = useMemo(() => getDefaultFilterValues(schema), [schema]);
-  const [draft, setDraft] = useState<FilterValues>(value ?? defaults);
+  const [draftFilter, setDraftFilter] = useState<FilterValues>(
+    value ?? defaults,
+  );
 
   useEffect(() => {
-    if (open) setDraft(value ?? defaults);
+    if (open) {
+      setDraftFilter(value ?? defaults);
+    }
   }, [open, value, defaults]);
 
   const updateField = (id: string, next: string | string[]) => {
-    setDraft((prev) => ({ ...prev, [id]: next }));
+    setDraftFilter((prev) => ({ ...prev, [id]: next }));
   };
 
   return (
     <div className="flex w-[292px] flex-col rounded-2xl border border-[#e4ebf1] bg-white font-['Manrope'] shadow-lg">
+      {/* Header */}
       <div className="flex items-center justify-between px-5 pt-5">
         <h3 className="text-base font-semibold text-[#123e5e]">Filters</h3>
         <button
           type="button"
-          onClick={() => setDraft(defaults)}
+          onClick={() => setDraftFilter(defaults)}
           className="text-sm font-medium text-[#e9b83f] transition-colors hover:text-[#d4a52e]"
         >
           Reset
         </button>
       </div>
 
+      {/* Checkboxes, Radios, and Chips Area */}
       <div className="mt-4 max-h-[60vh] space-y-5 overflow-y-auto px-5">
         {schema.map((field) => (
           <FilterFieldGroup
             key={field.id}
             field={field}
-            values={draft}
+            values={draftFilter}
             onChange={updateField}
           />
         ))}
       </div>
 
+      {/* Footer Actions */}
       <div className="mt-6 flex items-center gap-3 px-5 pb-5">
         <button
           type="button"
@@ -224,7 +229,7 @@ export function FilterPanel({
         </button>
         <button
           type="button"
-          onClick={() => onApply(draft)}
+          onClick={() => onApply(draftFilter)}
           className="h-10 flex-1 rounded-full bg-[#0a3558] text-sm font-medium text-white transition-colors hover:bg-[#07253e]"
         >
           Apply

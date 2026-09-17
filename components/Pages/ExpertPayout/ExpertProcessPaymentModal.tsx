@@ -3,9 +3,9 @@
 import React, { useState } from "react";
 import { X } from "lucide-react";
 import CustomModal from "@/components/shared/CustomModal";
-import { CustomTextarea } from "@/components/shared/CustomInput";
 import type { ExpertRecord } from "./ExpertTable";
 import CustomButton from "@/components/shared/CustomButton";
+import { CustomTextarea } from "@/components/shared/CustomTextare";
 
 interface ExpertProcessPaymentModalProps {
   open: boolean;
