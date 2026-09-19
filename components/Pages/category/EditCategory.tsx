@@ -56,7 +56,7 @@ export default function EditCategory({
           Icon
         </p>
 
-        <div className="mt-2 flex gap-3">
+        <div className="mt-2 grid grid-cols-4 lg:grid-cols-5 gap-3">
           {category.map((item, index) => {
             const isSelected = selectedIconIndex === index;
 
