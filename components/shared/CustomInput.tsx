@@ -13,6 +13,7 @@ export interface CustomInputProps
   leadingPrefix?: React.ReactNode;
   trailingSuffix?: React.ReactNode;
   containerClassName?: string;
+  isRequired?: boolean;
 }
 
 export const CustomInput = forwardRef<HTMLInputElement, CustomInputProps>(
@@ -27,17 +28,22 @@ export const CustomInput = forwardRef<HTMLInputElement, CustomInputProps>(
       className = "",
       disabled,
       id,
+      isRequired,
       ...props
     },
     ref
   ) => {
     const inputId = id || (label ? label.toLowerCase().replace(/\s+/g, "-") : undefined);
+    const showRequired = props.required || isRequired;
 
     return (
       <div className={`w-full flex flex-col gap-1.5 font-['Manrope'] ${containerClassName}`}>
         {label && (
-          <label htmlFor={inputId} className="text-sm font-normal text-slate-600 leading-6">
-            {label}
+          <label htmlFor={inputId} className="text-sm font-normal text-slate-600 leading-6 inline-flex items-center gap-0.5">
+            <span>{label}</span>
+            {showRequired && (
+              <span className="text-red-500 text-base font-medium font-['Work_Sans'] leading-6">*</span>
+            )}
           </label>
         )}
 

@@ -17,53 +17,58 @@ export interface CustomSelectOption {
 }
 
 export interface CustomSelectProps {
-  label?: string;
-  placeholder?: string;
-  options: CustomSelectOption[];
-  value?: string;
-  defaultValue?: string;
-  onValueChange?: (value: string) => void;
-  disabled?: boolean;
-  error?: string;
-  helperText?: string;
-  containerClassName?: string;
-  triggerClassName?: string;
-  contentClassName?: string;
-  itemClassName?: string;
+    label?: string;
+    placeholder?: string;
+    options: CustomSelectOption[];
+    value?: string;
+    defaultValue?: string;
+    onValueChange?: (value: string) => void;
+    disabled?: boolean;
+    error?: string;
+    helperText?: string;
+    containerClassName?: string;
+    triggerClassName?: string;
+    contentClassName?: string;
+    itemClassName?: string;
+    isRequired?: boolean;
 }
 
 export function CustomSelect({
-  label,
-  placeholder = "Select an option",
-  options,
-  value,
-  defaultValue,
-  onValueChange,
-  disabled,
-  error,
-  helperText,
-  containerClassName = "",
-  triggerClassName = "",
-  contentClassName = "",
-  itemClassName = "",
+    label,
+    placeholder = "Select an option",
+    options,
+    value,
+    defaultValue,
+    onValueChange,
+    disabled,
+    error,
+    helperText,
+    containerClassName = "",
+    triggerClassName = "",
+    contentClassName = "",
+    itemClassName = "",
+    isRequired,
 }: CustomSelectProps) {
   const selectId = React.useId();
 
-  return (
-    <div
-      className={cn(
-        "w-full flex flex-col gap-1.5 font-['Manrope']",
-        containerClassName,
-      )}
-    >
-      {label && (
-        <label
-          htmlFor={selectId}
-          className="text-sm font-normal text-slate-600 leading-6"
+    return (
+        <div
+            className={cn(
+                "w-full flex flex-col gap-1.5 font-['Manrope']",
+                containerClassName
+            )}
         >
-          {label}
-        </label>
-      )}
+            {label && (
+                <label
+                    htmlFor={selectId}
+                    className="text-sm font-normal text-slate-600 leading-6 inline-flex items-center gap-0.5"
+                >
+                    <span>{label}</span>
+                    {isRequired && (
+                        <span className="text-red-500 text-base font-medium font-['Work_Sans'] leading-6">*</span>
+                    )}
+                </label>
+            )}
 
       <Select
         value={value}
