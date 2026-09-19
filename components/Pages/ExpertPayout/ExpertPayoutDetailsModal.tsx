@@ -32,9 +32,9 @@ export default function ExpertPayoutDetailsModal({
       <CustomModal
         open={open}
         onOpenChange={onOpenChange}
-        size="sm"
+        size="md"
         showCloseButton={false}
-        className="p-0 gap-0 rounded-2xl overflow-hidden"
+        className="p-5 gap-0 rounded-2xl overflow-hidden"
       >
         {/* ── Header ── */}
         <div className="flex items-center justify-between   pb-4">
