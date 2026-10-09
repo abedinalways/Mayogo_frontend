@@ -41,7 +41,13 @@ export interface AdminLoginCredentials {
 
 export interface LoginResponseData {
   accessToken: string;
-  user: AdminUser;
+  user?: AdminUser;
+  admin?: AdminUser;
+  role?: string | AdminRole;
+  userType?: string;
+  id?: string;
+  fullName?: string;
+  email?: string;
 }
 
 export interface RefreshTokenResponseData {
