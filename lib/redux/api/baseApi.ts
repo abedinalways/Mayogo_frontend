@@ -93,6 +93,7 @@ export const baseApi = createApi({
     "Content",
     "Verification",
     "Role",
+    "Support",
   ],
   endpoints: () => ({}),
 });

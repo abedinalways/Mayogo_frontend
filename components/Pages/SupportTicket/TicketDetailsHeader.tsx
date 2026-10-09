@@ -1,10 +1,12 @@
 import React from "react";
+import { Loader2 } from "lucide-react";
 
 export interface TicketDetailsHeaderProps {
   ticketId: string;
   category: string;
   status: "Open" | "In Progress" | "Resolved" | "Closed";
   onMarkAsSolved?: () => void;
+  isLoading?: boolean;
 }
 
 export function TicketDetailsHeader({
@@ -12,7 +14,7 @@ export function TicketDetailsHeader({
 }: {
   ticketDetails: TicketDetailsHeaderProps;
 }) {
-  const { ticketId, category, status, onMarkAsSolved } = ticketDetails;
+  const { ticketId, category, status, onMarkAsSolved, isLoading = false } = ticketDetails;
 
   const renderStatusBadge = () => {
     const config = {
@@ -57,8 +59,7 @@ export function TicketDetailsHeader({
   };
 
   return (
-    <div className="flex w-full items-start justify-between">
-      {/* Title & Status Group */}
+    <div className="flex w-full items-start justify-between font-['Manrope']">
       <div className="flex flex-col justify-center gap-2">
         <div className="flex items-center gap-4">
           <h1 className="font-['Manrope'] text-xl font-semibold leading-5 text-slate-900">
@@ -71,14 +72,19 @@ export function TicketDetailsHeader({
         </p>
       </div>
 
-      {/* Primary Action Button */}
-      <button
-        type="button"
-        onClick={onMarkAsSolved}
-        className="flex h-12 items-center justify-center rounded-lg bg-[#0a3558] px-6 py-3.5  text-base font-medium leading-5 tracking-tight text-white transition-colors hover:bg-[#072742]"
-      >
-        Mark as Solved
-      </button>
+      {status !== "Resolved" && status !== "Closed" && (
+        <button
+          type="button"
+          onClick={onMarkAsSolved}
+          disabled={isLoading}
+          className="flex h-12 items-center justify-center gap-2 rounded-lg bg-[#0a3558] px-6 py-3.5 text-base font-medium leading-5 tracking-tight text-white transition-colors hover:bg-[#072742] cursor-pointer disabled:opacity-50"
+        >
+          {isLoading && <Loader2 className="h-4 w-4 animate-spin text-white" />}
+          <span>Mark as Solved</span>
+        </button>
+      )}
     </div>
   );
 }
+
+export default TicketDetailsHeader;
