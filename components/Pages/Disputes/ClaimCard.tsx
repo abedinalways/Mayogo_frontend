@@ -1,23 +1,16 @@
 "use client";
 
 import React, { useState } from "react";
-import { Download, CheckCircle, FileText, Image as ImageIcon } from "lucide-react";
-
-export interface EvidenceFile {
-  id: string;
-  name: string;
-  size: string;
-  type: "pdf" | "image";
-  isDownloaded?: boolean;
-}
+import { Download, CheckCircle } from "lucide-react";
+import { DisputeEvidenceFile } from "@/types/dispute.types";
 
 export interface ClaimCardProps {
   type: "client" | "provider";
-  date: string;
-  time: string;
-  title: string;
-  description: string;
-  files?: EvidenceFile[];
+  date?: string;
+  time?: string;
+  title?: string;
+  description?: string;
+  files?: DisputeEvidenceFile[];
   beforePhotos?: string[];
   afterPhotos?: string[];
   onDownloadAll?: () => void;
@@ -26,10 +19,10 @@ export interface ClaimCardProps {
 
 export function ClaimCard({
   type,
-  date,
-  time,
-  title,
-  description,
+  date = "N/A",
+  time = "",
+  title = "Service Claim",
+  description = "No claim description provided.",
   files = [],
   beforePhotos = [],
   afterPhotos = [],
@@ -48,9 +41,7 @@ export function ClaimCard({
 
   return (
     <div className="flex-1 bg-white rounded-2xl p-4 border border-slate-200 shadow-sm flex flex-col justify-between gap-6 font-['Manrope']">
-      {/* Top Header Row */}
       <div className="flex items-center justify-between gap-2">
-        {/* Type Badge */}
         <span
           className={`px-3 py-1 rounded-sm text-sm font-medium border ${
             isClient
@@ -61,18 +52,18 @@ export function ClaimCard({
           {isClient ? "Client Claim" : "Provider Response"}
         </span>
 
-        {/* Timestamp Badges */}
         <div className="flex items-center gap-1.5">
           <span className="px-2 py-0.5 bg-sky-50 text-sky-600 border border-sky-100 rounded-sm text-xs font-medium">
             {date}
           </span>
-          <span className="px-2 py-0.5 bg-sky-50 text-sky-600 border border-sky-100 rounded-sm text-xs font-medium">
-            {time}
-          </span>
+          {time && (
+            <span className="px-2 py-0.5 bg-sky-50 text-sky-600 border border-sky-100 rounded-sm text-xs font-medium">
+              {time}
+            </span>
+          )}
         </div>
       </div>
 
-      {/* Main Content Body */}
       <div className="flex-1 flex flex-col justify-between gap-6">
         <div className="flex flex-col gap-4">
           <h2 className="text-xl font-semibold text-[#0a3558] leading-5">
@@ -92,23 +83,23 @@ export function ClaimCard({
           </p>
         </div>
 
-        {/* Evidence Section */}
         <div className="p-4 rounded-2xl border border-slate-200 flex flex-col gap-5">
           <div className="flex items-center justify-between">
             <span className="text-base font-normal text-slate-600">
               Evidence
             </span>
-            <button
-              type="button"
-              onClick={onDownloadAll}
-              className="text-base font-semibold text-[#0a3558] underline hover:text-[#07253e] cursor-pointer"
-            >
-              Download all
-            </button>
+            {files.length > 0 && (
+              <button
+                type="button"
+                onClick={onDownloadAll}
+                className="text-base font-semibold text-[#0a3558] underline hover:text-[#07253e] cursor-pointer"
+              >
+                Download all
+              </button>
+            )}
           </div>
 
-          {/* Downloadable Files List */}
-          {files.length > 0 && (
+          {files.length > 0 ? (
             <div className="flex flex-col gap-3">
               {files.map((file) => (
                 <div
@@ -121,15 +112,17 @@ export function ClaimCard({
                         file.type === "pdf" ? "bg-red-500" : "bg-amber-500"
                       }`}
                     >
-                      {file.type.toUpperCase()}
+                      {(file.type || "FILE").toUpperCase()}
                     </div>
                     <div className="flex flex-col min-w-0 flex-1">
                       <span className="text-base font-medium text-slate-800 truncate leading-5">
                         {file.name}
                       </span>
-                      <span className="text-sm font-normal text-slate-500 leading-6">
-                        File size : {file.size}
-                      </span>
+                      {file.size && (
+                        <span className="text-sm font-normal text-slate-500 leading-6">
+                          File size : {file.size}
+                        </span>
+                      )}
                     </div>
                   </div>
 
@@ -150,9 +143,10 @@ export function ClaimCard({
                 </div>
               ))}
             </div>
+          ) : (
+            <p className="text-xs text-slate-400">No evidence files submitted.</p>
           )}
 
-          {/* Photos Grid (Before & After) */}
           {(beforePhotos.length > 0 || afterPhotos.length > 0) && (
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
               {beforePhotos.length > 0 && (
@@ -198,65 +192,43 @@ export function ClaimCard({
   );
 }
 
-export default function DisputeClaimsComparison() {
-  const clientFiles: EvidenceFile[] = [
-    {
-      id: "1",
-      name: "Project Brief.pdf",
-      size: "10,21 MB",
-      type: "pdf",
-      isDownloaded: true,
-    },
-    {
-      id: "2",
-      name: "Ac Unit.jpg",
-      size: "9,11 MB",
-      type: "image",
-      isDownloaded: false,
-    },
-  ];
+export interface DisputeClaimsComparisonProps {
+  clientClaim?: ClaimCardProps;
+  providerResponse?: ClaimCardProps;
+}
 
-  const providerFiles: EvidenceFile[] = [
-    {
-      id: "3",
-      name: "Project Brief.pdf",
-      size: "10,21 MB",
-      type: "pdf",
-      isDownloaded: true,
-    },
-  ];
+export default function DisputeClaimsComparison({
+  clientClaim,
+  providerResponse,
+}: DisputeClaimsComparisonProps) {
+  const fallbackClientClaim: ClaimCardProps = {
+    type: "client",
+    date: "Jul 27, 2026",
+    time: "11:00 AM",
+    title: "Service quality was not as expected",
+    description:
+      "I hired the expert to repair my AC unit because it was not cooling properly. The expert visited the location and marked the job as completed, but the cooling issue was not resolved. Within two days, the AC started showing the same problem again. I contacted the expert several times for a follow-up inspection, but I did not receive any clear response. Since the issue remains unresolved, I am requesting a review of the completed work and a partial refund.",
+  };
 
-  const beforePhotos = [
-    "https://images.unsplash.com/photo-1621905251189-08b45d6a269e?w=300&auto=format&fit=crop&q=80",
-    "https://images.unsplash.com/photo-1621905251189-08b45d6a269e?w=300&auto=format&fit=crop&q=80",
-  ];
-
-  const afterPhotos = [
-    "https://images.unsplash.com/photo-1581094288338-2314dddb7ece?w=300&auto=format&fit=crop&q=80",
-    "https://images.unsplash.com/photo-1581094288338-2314dddb7ece?w=300&auto=format&fit=crop&q=80",
-  ];
+  const fallbackProviderResponse: ClaimCardProps = {
+    type: "provider",
+    date: "Jul 28, 2026",
+    time: "02:00 PM",
+    title: "Service quality was not as expected",
+    description:
+      "I inspected the AC unit and identified a faulty capacitor, which was replaced during the service visit. After completing the repair, the AC was tested and was cooling normally before I left the location. The issue reported later appears to be related to a separate internal compressor standard decay.",
+    beforePhotos: [
+      "https://images.unsplash.com/photo-1621905251189-08b45d6a269e?w=300&auto=format&fit=crop&q=80",
+    ],
+    afterPhotos: [
+      "https://images.unsplash.com/photo-1581094288338-2314dddb7ece?w=300&auto=format&fit=crop&q=80",
+    ],
+  };
 
   return (
     <div className="w-full flex flex-col md:flex-row items-stretch gap-5">
-      <ClaimCard
-        type="client"
-        date="Jul 27, 2026"
-        time="11:00 AM"
-        title="Service quality was not as expected"
-        description="I hired the expert to repair my AC unit because it was not cooling properly. The expert visited the location and marked the job as completed, but the cooling issue was not resolved. Within two days, the AC started showing the same problem again. I contacted the expert several times for a follow-up inspection, but I did not receive any clear response. Since the issue remains unresolved, I am requesting a review of the completed work and a partial refund."
-        files={clientFiles}
-      />
-
-      <ClaimCard
-        type="provider"
-        date="Jul 28, 2026"
-        time="02:00 PM"
-        title="Service quality was not as expected"
-        description="I inspected the AC unit and identified a faulty capacitor, which was replaced during the service visit. After completing the repair, the AC was tested and was cooling normally before I left the location. The issue reported later appears to be related to a separate internal compressor standard decay."
-        files={providerFiles}
-        beforePhotos={beforePhotos}
-        afterPhotos={afterPhotos}
-      />
+      <ClaimCard {...(clientClaim || fallbackClientClaim)} type="client" />
+      <ClaimCard {...(providerResponse || fallbackProviderResponse)} type="provider" />
     </div>
   );
 }
