@@ -1,38 +1,44 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import Image from "next/image";
 import {
-  Search,
-  ChevronDown,
-  ArrowUpDown,
-  Plus,
-  Pencil,
   SquarePen,
   PlusIcon,
+  Loader2,
+  AlertCircle,
+  RefreshCw,
+  Wrench,
 } from "lucide-react";
 import { Column, DataTable } from "@/components/shared/DataTable";
 import AddServiceModal from "./AddServiceModal";
 import EditServiceModal from "./EditServiceModal";
-import { sampleServices, type ServiceRecord } from "./ServiceData";
-import TableToolbar from "@/components/shared/TableToolbar";
+import TableToolbar, { DropdownFilter } from "@/components/shared/TableToolbar";
 import CustomButton from "@/components/shared/CustomButton";
+import {
+  useGetServicesQuery,
+  useToggleServiceStatusMutation,
+  useGetCategoriesQuery,
+} from "@/lib/redux/api/categoryApi";
+import { ServiceItem } from "@/types/category.types";
 
-// ── Toggle Switch ──────────────────────────────────────────────────────────
 function ToggleSwitch({
   enabled,
   onChange,
+  disabled,
 }: {
   enabled: boolean;
   onChange: (v: boolean) => void;
+  disabled?: boolean;
 }) {
   return (
     <button
       type="button"
       role="switch"
       aria-checked={enabled}
+      disabled={disabled}
       onClick={() => onChange(!enabled)}
-      className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 focus:outline-none ${
+      className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 focus:outline-none disabled:opacity-50 ${
         enabled ? "bg-[#F5B517]" : "bg-slate-200"
       }`}
     >
@@ -45,53 +51,97 @@ function ToggleSwitch({
   );
 }
 
-// ── Main ServiceTable Component ────────────────────────────────────────────
 export default function ServiceTable() {
-  const [services, setServices] = useState<ServiceRecord[]>(sampleServices);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [addOpen, setAddOpen] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
-  const [selectedService, setSelectedService] = useState<ServiceRecord | null>(
-    null,
-  );
+  const [selectedService, setSelectedService] = useState<ServiceItem | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("");
-  const [statusCategory, setStatusCategory] = useState<string>("");
+  const [categoryFilter, setCategoryFilter] = useState<string>("");
+  const [page, setPage] = useState<number>(1);
+  const [pageSize, setPageSize] = useState<number>(10);
 
-  const handleOpenAdd = () => {
-    setAddOpen(true);
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      setDebouncedSearch(searchTerm);
+      setPage(1);
+    }, 350);
+    return () => clearTimeout(handler);
+  }, [searchTerm]);
+
+  const offset = (page - 1) * pageSize;
+
+  const { data, isLoading, isFetching, error, refetch } = useGetServicesQuery({
+    categoryId: categoryFilter || undefined,
+    status:
+      statusFilter === "active"
+        ? "active"
+        : statusFilter === "inactive"
+        ? "inactive"
+        : undefined,
+    search: debouncedSearch || undefined,
+    limit: pageSize,
+    offset,
+  });
+
+  const { data: categories } = useGetCategoriesQuery();
+  const [toggleStatus] = useToggleServiceStatusMutation();
+
+  const handleToggleStatus = async (id: string, value: boolean) => {
+    try {
+      await toggleStatus({ id, isActive: value }).unwrap();
+    } catch {
+      // handled via mutation
+    }
   };
 
-  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setSearchTerm(e.target.value);
-  };
+  const { serviceList, totalCount } = useMemo(() => {
+    if (!data) return { serviceList: [], totalCount: 0 };
 
-  const handleToggleStatus = (id: string, value: boolean) => {
-    setServices((prev) =>
-      prev.map((s) => (s.id === id ? { ...s, status: value } : s)),
-    );
-  };
+    let items: ServiceItem[] = [];
+    let total = 0;
+
+    const payload = (data as unknown) as Record<string, unknown>;
+    if (Array.isArray(payload.services)) {
+      items = payload.services as ServiceItem[];
+      total = (payload.total as number) ?? items.length;
+    } else if (Array.isArray(payload.data)) {
+      items = payload.data as ServiceItem[];
+      total = (payload.total as number) ?? items.length;
+    } else if (Array.isArray(payload.items)) {
+      items = payload.items as ServiceItem[];
+      total = (payload.total as number) ?? items.length;
+    } else if (payload.data && typeof payload.data === "object") {
+      const sub = payload.data as Record<string, unknown>;
+      items = (sub.services || sub.items || sub.data || []) as ServiceItem[];
+      total = (sub.total as number) ?? items.length;
+    }
+
+    return { serviceList: items, totalCount: total };
+  }, [data]);
+
+  const totalPages = Math.max(1, Math.ceil(totalCount / pageSize));
 
   const handleSelectAll = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setSelectedIds(e.target.checked ? services.map((s) => s.id) : []);
+    setSelectedIds(e.target.checked ? serviceList.map((s) => s.id) : []);
   };
 
   const handleSelectRow = (id: string) => {
     setSelectedIds((prev) =>
-      prev.includes(id) ? prev.filter((i) => i !== id) : [...prev, id],
+      prev.includes(id) ? prev.filter((i) => i !== id) : [...prev, id]
     );
   };
 
-  const columns: Column<ServiceRecord>[] = [
+  const columns: Column<ServiceItem>[] = [
     {
       key: "checkbox",
       header: (
         <input
           type="checkbox"
           onChange={handleSelectAll}
-          checked={
-            selectedIds.length === services.length && services.length > 0
-          }
+          checked={selectedIds.length === serviceList.length && serviceList.length > 0}
           className="h-4 w-4 cursor-pointer rounded border-slate-300"
         />
       ),
@@ -113,7 +163,11 @@ export default function ServiceTable() {
         <div className="flex items-center gap-3">
           <div className="relative h-10 w-10 shrink-0 overflow-hidden rounded-sm border border-[#F5B517]">
             <Image
-              src={item.image}
+              src={
+                item.imageUrl ||
+                item.image ||
+                "https://images.unsplash.com/photo-1581578731548-c64695cc6952?w=80&auto=format&fit=crop&q=80"
+              }
               alt={item.name}
               fill
               className="object-cover"
@@ -129,11 +183,18 @@ export default function ServiceTable() {
       key: "category",
       header: "Category",
       className: "min-w-[180px]",
-      cell: (item) => (
-        <span className="text-sm text-[#0777F6] font-['Manrope'] bg-[#EFF9FF] p-1 rounded">
-          {item.category}
-        </span>
-      ),
+      cell: (item) => {
+        const catName =
+          typeof item.category === "object"
+            ? item.category?.name
+            : item.category || "General";
+
+        return (
+          <span className="text-sm text-[#0777F6] font-['Manrope'] bg-[#EFF9FF] p-1 rounded">
+            {catName}
+          </span>
+        );
+      },
     },
     {
       key: "commission",
@@ -141,7 +202,7 @@ export default function ServiceTable() {
       className: "min-w-[120px] text-center",
       cell: (item) => (
         <span className="text-sm text-[#5A5A5A] font-['Manrope']">
-          {item.commission}
+          {item.commission}%
         </span>
       ),
     },
@@ -151,7 +212,7 @@ export default function ServiceTable() {
       className: "min-w-[110px] text-center",
       cell: (item) => (
         <span className="text-sm text-[#5A5A5A] font-['Manrope']">
-          {String(item.totalJobs).padStart(2, "0")}
+          {String(item.totalJobs || 0).padStart(2, "0")}
         </span>
       ),
     },
@@ -159,16 +220,19 @@ export default function ServiceTable() {
       key: "createdBy",
       header: "Created By",
       className: "min-w-[140px]",
-      cell: (item) => (
-        <div className="flex items-center gap-2">
-          <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[#0a3558] text-xs font-bold text-white border border-[#F5B517]">
-            {item.createdBy.slice(0, 2).toUpperCase()}
+      cell: (item) => {
+        const creator = item.createdBy || "Admin";
+        return (
+          <div className="flex items-center gap-2">
+            <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[#0a3558] text-xs font-bold text-white border border-[#F5B517]">
+              {creator.slice(0, 2).toUpperCase()}
+            </div>
+            <span className="text-sm text-[#103D5C] font-['Manrope']">
+              {creator}
+            </span>
           </div>
-          <span className="text-sm text-[#103D5C] font-['Manrope']">
-            {item.createdBy}
-          </span>
-        </div>
-      ),
+        );
+      },
     },
     {
       key: "status",
@@ -176,7 +240,7 @@ export default function ServiceTable() {
       className: "min-w-[100px] text-center",
       cell: (item) => (
         <ToggleSwitch
-          enabled={item.status}
+          enabled={item.isActive ?? (item.status === true)}
           onChange={(v) => handleToggleStatus(item.id, v)}
         />
       ),
@@ -192,7 +256,7 @@ export default function ServiceTable() {
             setSelectedService(item);
             setEditOpen(true);
           }}
-          className="inline-flex items-center justify-center rounded border border-[#E8E8E8] bg-white p-2 text-slate-500 hover:bg-slate-50 hover:text-[#0a3558] transition-colors"
+          className="inline-flex items-center justify-center rounded border border-[#E8E8E8] bg-white p-2 text-slate-500 hover:bg-slate-50 hover:text-[#0a3558] transition-colors cursor-pointer"
         >
           <SquarePen className="text-[#F5B517]" size={15} />
         </button>
@@ -200,71 +264,122 @@ export default function ServiceTable() {
     },
   ];
 
-  return (
-    <div className="space-y-4">
-      {/* ── Toolbar ── */}
+  const categoryFilterOptions = [
+    { label: "All Categories", value: "" },
+    ...(categories || []).map((c) => ({
+      label: c.name,
+      value: c.id,
+    })),
+  ];
 
+  const dropdownFilters: DropdownFilter[] = [
+    {
+      placeholder: "All Status",
+      value: statusFilter,
+      options: [
+        { label: "All Status", value: "" },
+        { label: "Active", value: "active" },
+        { label: "Inactive", value: "inactive" },
+      ],
+      onChange: (val) => {
+        setStatusFilter(val);
+        setPage(1);
+      },
+    },
+    {
+      placeholder: "All Categories",
+      value: categoryFilter,
+      options: categoryFilterOptions,
+      onChange: (val) => {
+        setCategoryFilter(val);
+        setPage(1);
+      },
+    },
+  ];
+
+  return (
+    <div className="space-y-4 font-['Manrope']">
       <TableToolbar
         searchQuery={searchTerm}
         onSearchChange={(e) => setSearchTerm(e.target.value)}
-        dropdownFilters={[
-          {
-            placeholder: "All Status",
-            value: statusFilter,
-            options: [
-              { label: "All Status", value: "" },
-              { label: "Active", value: "active" },
-              { label: "Inactive", value: "inactive" },
-            ],
-            onChange: (val) => setStatusFilter(val),
-          },
-
-          {
-            placeholder: "All Category",
-            value: statusCategory,
-            options: [
-              { label: "All Category", value: "" },
-              { label: "Home Services", value: "home" },
-              { label: "Repair & Diagnostic", value: "repair" },
-              { label: "Installation", value: "installation" },
-              { label: "Education & Tutoring", value: "education" },
-              { label: "Care Services", value: "care" },
-              { label: "Construction & Property", value: "construction" },
-              { label: "Remote Development", value: "development" },
-            ],
-            onChange: (val) => setStatusFilter(val),
-          },
-        ]}
-        onSortClick={() => {}}
+        dropdownFilters={dropdownFilters}
         actionButton={
           <CustomButton
-            onClick={handleOpenAdd}
+            onClick={() => setAddOpen(true)}
             size="md"
             leadingIcon={<PlusIcon />}
           >
-            {" "}
             Add New Service
           </CustomButton>
         }
       />
-      {/* <button
-        type="button"
-        onClick={() => setAddOpen(true)}
-        className="flex h-9 items-center gap-1.5 rounded-lg bg-[#0a3558] px-4 text-sm font-semibold text-white hover:bg-[#07253e] active:scale-[0.98] transition-colors font-['Manrope']"
-      >
-        <Plus size={15} />
-        Add New Service
-      </button> */}
 
-      {/* ── Table ── */}
-      <DataTable columns={columns} data={services} pagination={false} />
+      {error ? (
+        <div className="p-8 text-center bg-white border border-[#E8E8E8] rounded-b-xl">
+          <AlertCircle className="mx-auto h-8 w-8 text-red-500 mb-2" />
+          <p className="text-sm font-medium text-slate-800">Failed to load services</p>
+          <p className="text-xs text-slate-500 mt-1 mb-4">
+            Could not retrieve services from the server.
+          </p>
+          <button
+            type="button"
+            onClick={() => refetch()}
+            className="inline-flex items-center gap-2 px-3 py-1.5 text-xs font-medium rounded-lg bg-[#103D5C] text-white hover:bg-[#0b2b41] transition-colors"
+          >
+            <RefreshCw className="h-3.5 w-3.5" />
+            <span>Try Again</span>
+          </button>
+        </div>
+      ) : isLoading ? (
+        <div className="p-16 flex flex-col items-center justify-center gap-3 bg-white border border-[#E8E8E8] rounded-b-xl">
+          <Loader2 className="h-7 w-7 text-[#103D5C] animate-spin" />
+          <p className="text-xs text-slate-500 font-medium">Loading services...</p>
+        </div>
+      ) : serviceList.length === 0 ? (
+        <div className="p-16 text-center bg-white border border-[#E8E8E8] rounded-b-xl">
+          <Wrench className="mx-auto h-10 w-10 text-slate-300 mb-2" />
+          <p className="text-sm font-semibold text-slate-800">No services found</p>
+          <p className="text-xs text-slate-500 mt-1">
+            {searchTerm || statusFilter || categoryFilter
+              ? "Try adjusting your search query, status, or category filter."
+              : "No services have been created yet."}
+          </p>
+        </div>
+      ) : (
+        <div className="relative border-x border-b border-[#E8E8E8] rounded-b-xl overflow-hidden bg-white">
+          {isFetching && (
+            <div className="absolute top-2 right-4 z-10 flex items-center gap-1.5 px-2 py-1 bg-white/90 backdrop-blur rounded shadow-sm border text-[11px] text-slate-600">
+              <Loader2 className="h-3 w-3 animate-spin text-[#103D5C]" />
+              <span>Updating...</span>
+            </div>
+          )}
+          <DataTable
+            columns={columns}
+            data={serviceList}
+            pagination={true}
+            pageSize={pageSize}
+            pageSizeOptions={[10, 20, 50, 100]}
+            currentPage={page}
+            totalPages={totalPages}
+            onPageChange={(newPage) => setPage(newPage)}
+            onPageSizeChange={(newSize) => {
+              setPageSize(newSize);
+              setPage(1);
+            }}
+          />
+        </div>
+      )}
 
-      {/* ── Modals ── */}
-      <AddServiceModal open={addOpen} onOpenChange={setAddOpen} />
+      <AddServiceModal
+        open={addOpen}
+        onOpenChange={setAddOpen}
+        onCreated={() => refetch()}
+      />
       <EditServiceModal
         open={editOpen}
         onOpenChange={setEditOpen}
         service={selectedService}
+        onSaved={() => refetch()}
       />
     </div>
   );
