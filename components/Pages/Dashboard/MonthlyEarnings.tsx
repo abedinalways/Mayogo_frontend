@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
-import { ChevronDown, RotateCw } from "lucide-react";
+import { ChevronDown, RotateCw, Loader2 } from "lucide-react";
 import {
   BarChart,
   Bar,
@@ -11,6 +11,7 @@ import {
   Tooltip,
   ResponsiveContainer,
 } from "recharts";
+import { useGetJobStatsQuery } from "@/lib/redux/api/jobApi";
 
 interface EarningsData {
   month: string;
@@ -18,7 +19,7 @@ interface EarningsData {
   commission: number;
 }
 
-const data: EarningsData[] = [
+const defaultData: EarningsData[] = [
   { month: "Jan", revenue: 2650, commission: 2250 },
   { month: "Feb", revenue: 2950, commission: 2680 },
   { month: "Mar", revenue: 3880, commission: 3550 },
@@ -27,19 +28,30 @@ const data: EarningsData[] = [
   { month: "Jun", revenue: 3480, commission: 3200 },
 ];
 
-const CustomTooltip = ({ active, payload }: any) => {
-  if (active && payload && payload.length) {
-    return (
+interface TooltipPayloadItem {
+  value: number;
+  dataKey: string;
+  payload: EarningsData;
+}
 
+interface CustomTooltipProps {
+  active?: boolean;
+  payload?: TooltipPayloadItem[];
+}
+
+const CustomTooltip = ({ active, payload }: CustomTooltipProps) => {
+  if (active && payload && payload.length) {
+    const item = payload[0].payload;
+    return (
       <div className="rounded-xl border border-slate-100 bg-white p-3.5 shadow-xl font-['Manrope'] min-w-[180px]">
-        <p className="text-xs font-semibold text-slate-800 mb-2">Apr 17, 2026</p>
+        <p className="text-xs font-semibold text-slate-800 mb-2">{item.month} 2026</p>
         <div className="flex items-center justify-between gap-4 text-xs mb-1">
           <span className="text-slate-500">Total Revenue</span>
-          <span className="font-bold text-[#0e3a5b]">$124.5K</span>
+          <span className="font-bold text-[#0e3a5b]">${item.revenue.toLocaleString()}</span>
         </div>
         <div className="flex items-center justify-between gap-4 text-xs">
           <span className="text-slate-500">Total Commission</span>
-          <span className="font-bold text-[#f2ad1b]">$18.4k</span>
+          <span className="font-bold text-[#f2ad1b]">${item.commission.toLocaleString()}</span>
         </div>
       </div>
     );
@@ -48,18 +60,15 @@ const CustomTooltip = ({ active, payload }: any) => {
 };
 
 export function MonthlyEarnings() {
-  const [timeRange, setTimeRange] = useState("Last 6 months");
+  const [timeRange] = useState("Last 6 months");
+  const { isFetching, refetch } = useGetJobStatsQuery();
 
   return (
     <div className="card-container">
-
-    {/* <div className="w-full rounded-2xl border border-slate-100 bg-white p-6 shadow-[0_4px_20px_rgba(0,0,0,0.015)] font-['Manrope']"> */}
-      {/* Header */}
       <div className="flex items-center justify-between pb-6 border-b border-slate-100/60">
         <h2 className="card-title">Monthly Earnings</h2>
 
         <div className="flex items-center gap-2">
-          {/* Dropdown */}
           <div className="relative">
             <button
               type="button"
@@ -70,22 +79,26 @@ export function MonthlyEarnings() {
             </button>
           </div>
 
-          {/* Refresh Button */}
           <button
             type="button"
-            className="flex h-8 w-8 items-center justify-center rounded-lg border border-slate-200 bg-white text-amber-500 hover:bg-slate-50 transition-colors"
+            onClick={() => refetch()}
+            disabled={isFetching}
+            className="flex h-8 w-8 items-center justify-center rounded-lg border border-slate-200 bg-white text-amber-500 hover:bg-slate-50 transition-colors disabled:opacity-50"
             aria-label="Refresh data"
           >
-            <RotateCw className="h-3.5 w-3.5" />
+            {isFetching ? (
+              <Loader2 className="h-3.5 w-3.5 animate-spin" />
+            ) : (
+              <RotateCw className="h-3.5 w-3.5" />
+            )}
           </button>
         </div>
       </div>
 
-      {/* Chart */}
       <div className="mt-6 h-[280px] w-full">
         <ResponsiveContainer width="100%" height="100%">
           <BarChart
-            data={data}
+            data={defaultData}
             margin={{ top: 10, right: 10, left: -20, bottom: 0 }}
             barGap={4}
           >
@@ -129,7 +142,6 @@ export function MonthlyEarnings() {
         </ResponsiveContainer>
       </div>
 
-      {/* Legend */}
       <div className="mt-6 flex items-center justify-center gap-6">
         <div className="flex items-center gap-2">
           <span className="h-2.5 w-2.5 rounded-sm bg-[#0e3a5b]" />
