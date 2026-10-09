@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { X } from "lucide-react";
+import { X, Loader2 } from "lucide-react";
 import CustomButton from "@/components/shared/CustomButton";
 import { CustomInput } from "@/components/shared/CustomInput";
 
@@ -16,12 +16,14 @@ export interface FaqAddProps {
   initialData?: FaqFormData | null;
   onCancel: () => void;
   onSubmit: (data: FaqFormData) => void;
+  isSubmitting?: boolean;
 }
 
 export default function FaqAdd({
   initialData,
   onCancel,
   onSubmit,
+  isSubmitting = false,
 }: FaqAddProps) {
   const isEdit = Boolean(initialData?.id);
 
@@ -33,7 +35,7 @@ export default function FaqAdd({
     if (initialData) {
       setTitle(initialData.title || "");
       setDescription(initialData.description || "");
-      setIsLive(initialData.status === "Live");
+      setIsLive(initialData.status.toLowerCase() === "live");
     } else {
       setTitle("");
       setDescription("");
@@ -53,7 +55,6 @@ export default function FaqAdd({
 
   return (
     <div className="font-['Manrope']">
-      {/* Header */}
       <div className="flex items-center justify-between pb-3 border-b border-slate-100">
         <h3 className="text-[#103D5C] text-center text-[18px] font-semibold leading-[100%]">
           {isEdit ? "Edit FAQ" : "Add FAQ"}
@@ -67,9 +68,7 @@ export default function FaqAdd({
         </button>
       </div>
 
-      {/* Form */}
       <form onSubmit={handleSubmit} className="flex flex-col gap-4 mt-4">
-        {/* Title Input */}
         <div>
           <CustomInput
             label="Title"
@@ -80,14 +79,13 @@ export default function FaqAdd({
           />
         </div>
 
-        {/* Description Textarea */}
         <div className="flex flex-col gap-1.5">
           <label className="text-sm font-normal text-slate-600 leading-6">
             Description
           </label>
           <textarea
             rows={4}
-            placeholder="Search or post a job, review the quotes you receive, then accept the expert that fits you needs and pay securely in-app."
+            placeholder="Enter the detailed answer for this FAQ..."
             value={description}
             onChange={(e) => setDescription(e.target.value)}
             required
@@ -95,7 +93,6 @@ export default function FaqAdd({
           />
         </div>
 
-        {/* Status Toggle */}
         <div className="flex items-center justify-between py-1">
           <span className="text-[#103D5C] text-[16px] font-medium leading-[160%]">
             Status
@@ -122,7 +119,6 @@ export default function FaqAdd({
           </div>
         </div>
 
-        {/* Actions */}
         <div className="flex items-center gap-4 pt-2">
           <CustomButton
             type="button"
@@ -130,6 +126,7 @@ export default function FaqAdd({
             size="md"
             className="flex-1 rounded-lg border-[#103D5C] text-[#103D5C] hover:bg-slate-50"
             onClick={onCancel}
+            disabled={isSubmitting}
           >
             Cancel
           </CustomButton>
@@ -137,9 +134,16 @@ export default function FaqAdd({
             type="submit"
             variant="primary"
             size="md"
-            className="flex-1 rounded-lg bg-[#103D5C] hover:bg-[#0b2841] text-white"
+            disabled={isSubmitting}
+            className="flex-1 rounded-lg bg-[#103D5C] hover:bg-[#0b2841] text-white flex items-center justify-center gap-2"
           >
-            {isEdit ? "Save Changes" : "Add FAQ"}
+            {isSubmitting ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : isEdit ? (
+              "Save Changes"
+            ) : (
+              "Add FAQ"
+            )}
           </CustomButton>
         </div>
       </form>
