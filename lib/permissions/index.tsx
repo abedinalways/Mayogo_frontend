@@ -192,6 +192,41 @@ export interface PermissionGateProps {
   fallback?: React.ReactNode;
 }
 
+import { useToast } from "@/components/shared/Toast/ToastContext";
+
+export { useToast } from "@/components/shared/Toast/ToastContext";
+
+/**
+ * Hook for action buttons that allows clicking to trigger a user-friendly toast
+ * when the user only has view permission instead of manage/allow_all permission.
+ */
+export function usePermissionAction(moduleSubmodule: string) {
+  const { isSuperAdmin, canManage } = usePermission();
+  const { showRestrictedToast } = useToast();
+
+  const isAllowedToManage = isSuperAdmin || canManage(moduleSubmodule);
+
+  const executeIfAllowed = useCallback(
+    (actionFn: () => void, deniedMessage?: string) => {
+      if (isAllowedToManage) {
+        actionFn();
+      } else {
+        showRestrictedToast(
+          deniedMessage ||
+            "You only have view permission for this feature. Management permission (Manage / Allow All) is required to perform this action."
+        );
+      }
+    },
+    [isAllowedToManage, showRestrictedToast]
+  );
+
+  return {
+    isAllowedToManage,
+    canManage: isAllowedToManage,
+    executeIfAllowed,
+  };
+}
+
 export function PermissionGate({
   permission,
   superAdminOnly = false,
