@@ -84,25 +84,27 @@ export default function Login() {
   };
 
   return (
-    <div>
-      <div className="bg-[#EDF2F6] rounded-2xl flex h-screen">
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 w-full">
-          <div className="flex justify-center items-center">
-            <div className="bg-[#FFFFFF] p-12 rounded-xl w-full max-w-135 min-w-90 shrink-0">
+    <div className="w-full">
+      <div className="bg-[#EDF2F6] rounded-2xl min-h-[calc(100vh-1.5rem)] sm:min-h-[calc(100vh-2rem)] flex flex-col justify-center overflow-hidden">
+        <div className="grid grid-cols-1 lg:grid-cols-2 w-full min-h-full flex-1">
+          {/* Form Column - Centered horizontally and vertically on all screen sizes */}
+          <div className="flex w-full items-center justify-center px-4 py-8 sm:px-6 md:px-10 lg:px-12">
+            <div className="bg-[#FFFFFF] p-6 sm:p-8 md:p-10 rounded-2xl w-full max-w-[480px] shadow-sm">
               <div className="flex justify-center items-center">
                 <Image
                   src="/images/authlogo.png"
                   alt="logo"
                   width={58}
                   height={58}
+                  priority
                 />
               </div>
 
-              <p className="text-[#103D5C] text-center text-[24px] font-semibold leading-[124%] py-1">
+              <h1 className="text-[#103D5C] text-center text-[22px] sm:text-[24px] font-semibold leading-[124%] py-1">
                 Welcome Back
-              </p>
+              </h1>
 
-              <p className="text-[#5A5A5A] text-center text-[16px] font-normal leading-[160%]">
+              <p className="text-[#5A5A5A] text-center text-[14px] sm:text-[16px] font-normal leading-[160%]">
                 Enter your username and password to continue.
               </p>
 
@@ -114,7 +116,7 @@ export default function Login() {
               )}
 
               <form onSubmit={handleSubmit}>
-                <div className="py-6">
+                <div className="py-5 sm:py-6">
                   <div className="space-y-4">
                     <div className="relative">
                       <CustomInput
@@ -129,7 +131,7 @@ export default function Login() {
                         className="pl-10"
                       />
 
-                      <Mail className="absolute left-3 top-11.5 h-4 w-4 text-gray-400" />
+                      <Mail className="absolute left-3.5 top-[43px] h-4 w-4 text-gray-400 pointer-events-none" />
                     </div>
 
                     <div className="relative">
@@ -142,28 +144,29 @@ export default function Login() {
                         onChange={handleChange}
                         error={errors.password}
                         disabled={isLoading}
-                        className="pl-10"
+                        className="pl-10 pr-10"
                       />
 
-                      <Lock className="absolute left-3 top-10.5 h-4 w-4 text-gray-400" />
+                      <Lock className="absolute left-3.5 top-[43px] h-4 w-4 text-gray-400 pointer-events-none" />
 
-                      {showPassword ? (
-                        <Eye
-                          className="absolute right-3 top-11.25 h-4 w-4 cursor-pointer text-gray-400"
-                          onClick={() => setShowPassword(false)}
-                        />
-                      ) : (
-                        <EyeOff
-                          className="absolute right-3 top-11.25 h-4 w-4 cursor-pointer text-gray-400"
-                          onClick={() => setShowPassword(true)}
-                        />
-                      )}
+                      <button
+                        type="button"
+                        onClick={() => setShowPassword((prev) => !prev)}
+                        className="absolute right-3.5 top-[43px] text-gray-400 hover:text-gray-600 focus:outline-none cursor-pointer"
+                        aria-label={showPassword ? "Hide password" : "Show password"}
+                      >
+                        {showPassword ? (
+                          <Eye className="h-4 w-4" />
+                        ) : (
+                          <EyeOff className="h-4 w-4" />
+                        )}
+                      </button>
                     </div>
                   </div>
 
                   <Link
                     href="/forget-password"
-                    className="flex justify-end mt-1.5 text-[#103D5C] text-right text-[14px] font-normal leading-[100%] underline"
+                    className="flex justify-end mt-2 text-[#103D5C] text-right text-[13px] sm:text-[14px] font-normal leading-[100%] underline hover:text-[#0c2e46]"
                   >
                     Forgot Password?
                   </Link>
@@ -177,12 +180,12 @@ export default function Login() {
                     checked={formData.remember}
                     onChange={handleChange}
                     disabled={isLoading}
-                    className="h-4 w-4 accent-[#103D5C]"
+                    className="h-4 w-4 rounded accent-[#103D5C] cursor-pointer"
                   />
 
                   <label
                     htmlFor="remember"
-                    className="text-[#5A5A5A] text-[14px] font-normal leading-[100%]"
+                    className="text-[#5A5A5A] text-[13px] sm:text-[14px] font-normal leading-[100%] cursor-pointer"
                   >
                     Remember the device
                   </label>
@@ -192,7 +195,7 @@ export default function Login() {
                   <CustomButton
                     type="submit"
                     disabled={isLoading}
-                    className="cursor-pointer flex items-center justify-center gap-2"
+                    className="cursor-pointer flex items-center justify-center gap-2 py-3.5"
                   >
                     {isLoading ? (
                       <>
@@ -206,12 +209,12 @@ export default function Login() {
                 </div>
               </form>
 
-              <div className="flex justify-center">
-                <span className="text-[#5A5A5A] text-[14px] font-normal leading-[100%]">
+              <div className="flex justify-center mt-2">
+                <span className="text-[#5A5A5A] text-[13px] sm:text-[14px] font-normal leading-[100%]">
                   Don’t have an account?{" "}
                   <Link
                     href="/register"
-                    className="text-[#103D5C] text-[14px] font-medium leading-[100%]"
+                    className="text-[#103D5C] text-[13px] sm:text-[14px] font-medium leading-[100%] underline hover:text-[#0c2e46]"
                   >
                     Sign Up Here
                   </Link>
@@ -220,16 +223,15 @@ export default function Login() {
             </div>
           </div>
 
-          <div className="mt-6 pb-4 lg:mt-0 lg:pb-0">
-            <div className="relative min-h-180 overflow-hidden rounded-2xl lg:min-h-full lg:rounded-none">
-              <Image
-                src="/images/leftimage2.png"
-                alt="logo"
-                fill
-                priority
-                className="rounded-2xl object-center lg:rounded-none"
-              />
-            </div>
+          {/* Image Column - Hidden on md and below, visible on lg screens */}
+          <div className="hidden lg:relative lg:block h-full min-h-[550px] overflow-hidden">
+            <Image
+              src="/images/leftimage2.png"
+              alt="Mayogo login illustration"
+              fill
+              priority
+              className="object-cover object-center"
+            />
           </div>
         </div>
       </div>

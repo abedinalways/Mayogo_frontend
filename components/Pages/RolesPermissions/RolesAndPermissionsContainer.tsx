@@ -2,7 +2,8 @@
 
 import React, { useState, useEffect, useMemo } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
-import { Loader2 } from "lucide-react";
+import { Loader2, ShieldAlert } from "lucide-react";
+import { usePermission } from "@/lib/permissions";
 import {
   RolesAndPermissionsHeader,
   RoleOption,
@@ -45,6 +46,25 @@ export function RolesAndPermissionsContainer() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const roleParam = searchParams.get("role");
+  const { isSuperAdmin: currentUserIsSuperAdmin } = usePermission();
+
+  if (!currentUserIsSuperAdmin) {
+    return (
+      <div className="flex flex-col items-center justify-center p-12 text-center bg-white rounded-xl border border-gray-100 shadow-sm mt-6">
+        <ShieldAlert className="h-12 w-12 text-red-500 mb-3" />
+        <h2 className="text-xl font-bold text-[#103D5C]">Access Denied</h2>
+        <p className="text-sm text-gray-500 mt-1 max-w-md">
+          Only Super Administrators have permission to view and configure platform roles and permissions.
+        </p>
+        <button
+          onClick={() => router.push("/dashboard")}
+          className="mt-4 px-4 py-2 bg-[#103D5C] text-white rounded-lg text-sm font-medium hover:bg-[#0c2f47] transition-colors"
+        >
+          Back to Dashboard
+        </button>
+      </div>
+    );
+  }
 
   const { data: roles = [], isLoading: isLoadingRoles } = useGetRolesQuery();
   const { data: allPermissions = [] } = useGetAllPermissionsQuery();
