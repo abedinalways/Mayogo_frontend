@@ -4,6 +4,8 @@ import "./globals.css";
 import { cn } from "@/lib/utils";
 import StoreProvider from "@/lib/redux/StoreProvider";
 
+import { ToastProvider } from "@/components/shared/Toast/ToastContext";
+
 const geist = Geist({subsets:['latin'],variable:'--font-sans'});
 
 const manrope = Manrope({
@@ -23,7 +25,9 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       className={cn("h-full", "antialiased", manrope.variable, "font-sans", geist.variable)}
     >
       <body className={`${manrope.className} min-h-full flex flex-col font-['Manrope']`}>
-        <StoreProvider>{children}</StoreProvider>
+        <StoreProvider>
+          <ToastProvider>{children}</ToastProvider>
+        </StoreProvider>
       </body>
     </html>
   );

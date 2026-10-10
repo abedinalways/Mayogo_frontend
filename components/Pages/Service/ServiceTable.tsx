@@ -20,16 +20,19 @@ import {
   useToggleServiceStatusMutation,
   useGetCategoriesQuery,
 } from "@/lib/redux/api/categoryApi";
+import { usePermissionAction } from "@/lib/permissions";
 import { ServiceItem } from "@/types/category.types";
 
 function ToggleSwitch({
   enabled,
   onChange,
   disabled,
+  isRestricted,
 }: {
   enabled: boolean;
   onChange: (v: boolean) => void;
   disabled?: boolean;
+  isRestricted?: boolean;
 }) {
   return (
     <button
@@ -38,7 +41,10 @@ function ToggleSwitch({
       aria-checked={enabled}
       disabled={disabled}
       onClick={() => onChange(!enabled)}
-      className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 focus:outline-none disabled:opacity-50 ${
+      title={isRestricted ? "View-only access (Click for details)" : undefined}
+      className={`relative inline-flex h-5 w-9 shrink-0 rounded-full border-2 border-transparent transition-colors duration-200 focus:outline-none ${
+        isRestricted ? "cursor-not-allowed opacity-60" : "cursor-pointer"
+      } ${
         enabled ? "bg-[#F5B517]" : "bg-slate-200"
       }`}
     >
@@ -88,6 +94,10 @@ export default function ServiceTable() {
 
   const { data: categories } = useGetCategoriesQuery();
   const [toggleStatus] = useToggleServiceStatusMutation();
+
+  const { canManage: canManageServices, executeIfAllowed } = usePermissionAction(
+    "platform.configuration.services"
+  );
 
   const handleToggleStatus = async (id: string, value: boolean) => {
     try {
@@ -241,7 +251,13 @@ export default function ServiceTable() {
       cell: (item) => (
         <ToggleSwitch
           enabled={item.isActive ?? (item.status === true)}
-          onChange={(v) => handleToggleStatus(item.id, v)}
+          isRestricted={!canManageServices}
+          onChange={(v) =>
+            executeIfAllowed(
+              () => handleToggleStatus(item.id, v),
+              "View-Only Mode: You only have view permission for Services. Management permission (Manage / Allow All) is required to change service status."
+            )
+          }
         />
       ),
     },
@@ -252,13 +268,23 @@ export default function ServiceTable() {
       cell: (item) => (
         <button
           type="button"
-          onClick={() => {
-            setSelectedService(item);
-            setEditOpen(true);
-          }}
-          className="inline-flex items-center justify-center rounded border border-[#E8E8E8] bg-white p-2 text-slate-500 hover:bg-slate-50 hover:text-[#0a3558] transition-colors cursor-pointer"
+          onClick={() =>
+            executeIfAllowed(
+              () => {
+                setSelectedService(item);
+                setEditOpen(true);
+              },
+              "View-Only Mode: You only have view permission for Services. Management permission (Manage / Allow All) is required to edit services."
+            )
+          }
+          title={!canManageServices ? "View-only access (Click for details)" : "Edit service"}
+          className={`inline-flex items-center justify-center rounded border border-[#E8E8E8] bg-white p-2 transition-colors ${
+            canManageServices
+              ? "text-slate-500 hover:bg-slate-50 hover:text-[#0a3558] cursor-pointer"
+              : "text-slate-400 opacity-60 cursor-not-allowed hover:bg-amber-50/50"
+          }`}
         >
-          <SquarePen className="text-[#F5B517]" size={15} />
+          <SquarePen className={canManageServices ? "text-[#F5B517]" : "text-slate-400"} size={15} />
         </button>
       ),
     },
@@ -305,9 +331,20 @@ export default function ServiceTable() {
         dropdownFilters={dropdownFilters}
         actionButton={
           <CustomButton
-            onClick={() => setAddOpen(true)}
+            onClick={() =>
+              executeIfAllowed(
+                () => setAddOpen(true),
+                "View-Only Mode: You only have view permission for Services. Management permission (Manage / Allow All) is required to add new services."
+              )
+            }
             size="md"
             leadingIcon={<PlusIcon />}
+            className={
+              !canManageServices
+                ? "opacity-60 cursor-not-allowed hover:bg-[#0a3558] active:scale-100"
+                : ""
+            }
+            title={!canManageServices ? "View-only access (Click for details)" : undefined}
           >
             Add New Service
           </CustomButton>
