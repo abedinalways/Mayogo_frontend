@@ -4,10 +4,19 @@ import { AdminUser, AuthState } from "@/types/auth.types";
 
 const AUTH_COOKIE_KEY = "mayogo_auth_session";
 
+const getSavedToken = (): string | null => {
+  if (typeof window !== "undefined") {
+    return Cookies.get(AUTH_COOKIE_KEY) || null;
+  }
+  return null;
+};
+
+const savedToken = getSavedToken();
+
 const initialState: AuthState = {
   user: null,
-  accessToken: null,
-  isAuthenticated: false,
+  accessToken: savedToken,
+  isAuthenticated: !!savedToken,
   isLoading: false,
 };
 
@@ -23,12 +32,20 @@ export const authSlice = createSlice({
       state.accessToken = action.payload.accessToken;
       state.isAuthenticated = true;
       state.isLoading = false;
-      Cookies.set(AUTH_COOKIE_KEY, "true", { expires: 7, sameSite: "lax" });
+      Cookies.set(AUTH_COOKIE_KEY, action.payload.accessToken, {
+        expires: 7,
+        sameSite: "lax",
+        path: "/",
+      });
     },
     setAccessToken: (state, action: PayloadAction<string>) => {
       state.accessToken = action.payload;
       state.isAuthenticated = true;
-      Cookies.set(AUTH_COOKIE_KEY, "true", { expires: 7, sameSite: "lax" });
+      Cookies.set(AUTH_COOKIE_KEY, action.payload, {
+        expires: 7,
+        sameSite: "lax",
+        path: "/",
+      });
     },
     setUser: (state, action: PayloadAction<AdminUser>) => {
       state.user = action.payload;
@@ -47,7 +64,7 @@ export const authSlice = createSlice({
       state.accessToken = null;
       state.isAuthenticated = false;
       state.isLoading = false;
-      Cookies.remove(AUTH_COOKIE_KEY);
+      Cookies.remove(AUTH_COOKIE_KEY, { path: "/" });
     },
   },
 });
