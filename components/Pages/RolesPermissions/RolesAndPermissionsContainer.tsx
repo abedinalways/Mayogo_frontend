@@ -202,27 +202,27 @@ export function RolesAndPermissionsContainer() {
         const hasView = isSuperAdminRole
           ? true
           : Boolean(
-              (viewPerm?.id && assignedIds.has(viewPerm.id)) ||
-              (viewPerm?.key && assignedKeys.has(viewPerm.key.toLowerCase())) ||
-              (viewPerm?.key && assignedKeys.has(normalize(viewPerm.key)))
-            );
+            (viewPerm?.id && assignedIds.has(viewPerm.id)) ||
+            (viewPerm?.key && assignedKeys.has(viewPerm.key.toLowerCase())) ||
+            (viewPerm?.key && assignedKeys.has(normalize(viewPerm.key)))
+          );
 
         const hasManage = isSuperAdminRole
           ? true
           : Boolean(
-              (managePerm?.id && assignedIds.has(managePerm.id)) ||
-              (managePerm?.key && assignedKeys.has(managePerm.key.toLowerCase())) ||
-              (managePerm?.key && assignedKeys.has(normalize(managePerm.key)))
-            );
+            (managePerm?.id && assignedIds.has(managePerm.id)) ||
+            (managePerm?.key && assignedKeys.has(managePerm.key.toLowerCase())) ||
+            (managePerm?.key && assignedKeys.has(normalize(managePerm.key)))
+          );
 
         const hasAllowAll = isSuperAdminRole
           ? true
           : Boolean(
-              (allowAllPerm?.id && assignedIds.has(allowAllPerm.id)) ||
-              (allowAllPerm?.key && assignedKeys.has(allowAllPerm.key.toLowerCase())) ||
-              (allowAllPerm?.key && assignedKeys.has(normalize(allowAllPerm.key))) ||
-              (hasView && hasManage)
-            );
+            (allowAllPerm?.id && assignedIds.has(allowAllPerm.id)) ||
+            (allowAllPerm?.key && assignedKeys.has(allowAllPerm.key.toLowerCase())) ||
+            (allowAllPerm?.key && assignedKeys.has(normalize(allowAllPerm.key))) ||
+            (hasView && hasManage)
+          );
 
         const rowOverride = overrides[sub.id];
 
@@ -276,25 +276,25 @@ export function RolesAndPermissionsContainer() {
           const hasView = isSuperAdminRole
             ? true
             : Boolean(
-                (pair.view?.id && assignedIds.has(pair.view.id)) ||
-                (pair.view?.key && assignedKeys.has(pair.view.key.toLowerCase())) ||
-                (pair.view?.key && assignedKeys.has(normalize(pair.view.key)))
-              );
+              (pair.view?.id && assignedIds.has(pair.view.id)) ||
+              (pair.view?.key && assignedKeys.has(pair.view.key.toLowerCase())) ||
+              (pair.view?.key && assignedKeys.has(normalize(pair.view.key)))
+            );
           const hasManage = isSuperAdminRole
             ? true
             : Boolean(
-                (pair.manage?.id && assignedIds.has(pair.manage.id)) ||
-                (pair.manage?.key && assignedKeys.has(pair.manage.key.toLowerCase())) ||
-                (pair.manage?.key && assignedKeys.has(normalize(pair.manage.key)))
-              );
+              (pair.manage?.id && assignedIds.has(pair.manage.id)) ||
+              (pair.manage?.key && assignedKeys.has(pair.manage.key.toLowerCase())) ||
+              (pair.manage?.key && assignedKeys.has(normalize(pair.manage.key)))
+            );
           const hasAllowAll = isSuperAdminRole
             ? true
             : Boolean(
-                (pair.allowAll?.id && assignedIds.has(pair.allowAll.id)) ||
-                (pair.allowAll?.key && assignedKeys.has(pair.allowAll.key.toLowerCase())) ||
-                (pair.allowAll?.key && assignedKeys.has(normalize(pair.allowAll.key))) ||
-                (hasView && hasManage)
-              );
+              (pair.allowAll?.id && assignedIds.has(pair.allowAll.id)) ||
+              (pair.allowAll?.key && assignedKeys.has(pair.allowAll.key.toLowerCase())) ||
+              (pair.allowAll?.key && assignedKeys.has(normalize(pair.allowAll.key))) ||
+              (hasView && hasManage)
+            );
 
           const rowOverride = overrides[subId];
 

@@ -213,7 +213,7 @@ export function usePermissionAction(moduleSubmodule: string) {
       } else {
         showRestrictedToast(
           deniedMessage ||
-            "You only have view permission for this feature. Management permission (Manage / Allow All) is required to perform this action."
+          "You only have view permission for this feature. Management permission (Manage / Allow All) is required to perform this action."
         );
       }
     },

@@ -160,8 +160,28 @@ export default function TopExperts({ className = "" }: { className?: string }) {
 
       <div className="w-full">
         {isLoading ? (
-          <div className="flex items-center justify-center py-10">
-            <Loader2 className="h-6 w-6 animate-spin text-[#0f3453]" />
+          <div className="flex flex-col gap-3 animate-pulse">
+            {[1, 2, 3].map((item) => (
+              <div
+                key={item}
+                className="flex items-center gap-4 rounded-xl border border-slate-100 bg-[#f8fbfd] p-3.5"
+              >
+                <div className="h-[68px] w-[68px] shrink-0 rounded-full bg-slate-200" />
+                <div className="flex flex-1 flex-col gap-2 min-w-0">
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="flex flex-col gap-1 min-w-0">
+                      <div className="h-4 w-32 rounded bg-slate-200" />
+                      <div className="h-3 w-20 rounded bg-slate-100" />
+                    </div>
+                    <div className="h-4 w-12 shrink-0 rounded bg-slate-100" />
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <div className="h-3 w-24 rounded bg-slate-100" />
+                    <div className="h-3 w-16 rounded bg-slate-100" />
+                  </div>
+                </div>
+              </div>
+            ))}
           </div>
         ) : (
           <div className="flex flex-col gap-3">

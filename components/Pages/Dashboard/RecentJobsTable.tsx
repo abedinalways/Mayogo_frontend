@@ -205,8 +205,49 @@ export function RecentJobsTable() {
       </div>
 
       {isLoading ? (
-        <div className="flex items-center justify-center p-12 bg-white border border-[#E8E8E8] rounded-b-xl">
-          <Loader2 className="h-6 w-6 animate-spin text-[#0f3453]" />
+        <div className="w-full overflow-x-auto rounded-b-xl border border-[#E8E8E8] bg-white animate-pulse">
+          <table className="w-full min-w-[700px] text-left">
+            <thead>
+              <tr className="border-b border-[#E8E8E8] bg-slate-50/60">
+                <th className="py-3 px-4"><div className="h-3.5 w-16 rounded bg-slate-200" /></th>
+                <th className="py-3 px-4"><div className="h-3.5 w-20 rounded bg-slate-200" /></th>
+                <th className="py-3 px-4"><div className="h-3.5 w-16 rounded bg-slate-200" /></th>
+                <th className="py-3 px-4"><div className="h-3.5 w-16 rounded bg-slate-200" /></th>
+                <th className="py-3 px-4"><div className="h-3.5 w-16 rounded bg-slate-200" /></th>
+                <th className="py-3 px-4"><div className="h-3.5 w-14 rounded bg-slate-200" /></th>
+              </tr>
+            </thead>
+            <tbody>
+              {[1, 2, 3, 4, 5].map((row) => (
+                <tr key={row} className="border-b border-slate-100 last:border-b-0">
+                  <td className="py-4 px-4"><div className="h-4 w-20 rounded bg-slate-200" /></td>
+                  <td className="py-4 px-4">
+                    <div className="flex items-center gap-3">
+                      <div className="h-8 w-8 shrink-0 rounded-lg bg-slate-200" />
+                      <div className="flex flex-col gap-1">
+                        <div className="h-3.5 w-28 rounded bg-slate-200" />
+                        <div className="h-2.5 w-16 rounded bg-slate-100" />
+                      </div>
+                    </div>
+                  </td>
+                  <td className="py-4 px-4">
+                    <div className="flex items-center gap-2.5">
+                      <div className="h-7 w-7 shrink-0 rounded-full bg-slate-200" />
+                      <div className="h-3.5 w-20 rounded bg-slate-100" />
+                    </div>
+                  </td>
+                  <td className="py-4 px-4">
+                    <div className="flex items-center gap-2.5">
+                      <div className="h-7 w-7 shrink-0 rounded-full bg-slate-200" />
+                      <div className="h-3.5 w-20 rounded bg-slate-100" />
+                    </div>
+                  </td>
+                  <td className="py-4 px-4"><div className="h-6 w-24 rounded-full bg-slate-100" /></td>
+                  <td className="py-4 px-4"><div className="h-4 w-16 rounded bg-slate-200" /></td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         </div>
       ) : (
         <DataTable columns={columns} data={jobs} pagination={false} />

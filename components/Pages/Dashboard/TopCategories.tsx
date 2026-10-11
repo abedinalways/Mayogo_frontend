@@ -106,7 +106,12 @@ export function TopCategoriesCard() {
 
       <div className="relative mt-6 h-[260px] w-full flex items-center justify-center">
         {isLoading ? (
-          <Loader2 className="h-6 w-6 animate-spin text-[#0f3453]" />
+          <div className="h-44 w-44 rounded-full border-[22px] border-slate-100 flex items-center justify-center animate-pulse">
+            <div className="flex flex-col items-center gap-1">
+              <div className="h-4 w-12 rounded bg-slate-200" />
+              <div className="h-3 w-16 rounded bg-slate-100" />
+            </div>
+          </div>
         ) : (
           <ResponsiveContainer width="100%" height="100%">
             <PieChart>
