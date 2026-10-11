@@ -118,50 +118,43 @@ export default function Login() {
               <form onSubmit={handleSubmit}>
                 <div className="py-5 sm:py-6">
                   <div className="space-y-4">
-                    <div className="relative">
-                      <CustomInput
-                        name="email"
-                        type="email"
-                        label="Email"
-                        placeholder="enter your email"
-                        value={formData.email}
-                        onChange={handleChange}
-                        error={errors.email}
-                        disabled={isLoading}
-                        className="pl-10"
-                      />
+                    <CustomInput
+                      name="email"
+                      type="email"
+                      label="Email"
+                      placeholder="enter your email"
+                      value={formData.email}
+                      onChange={handleChange}
+                      error={errors.email}
+                      disabled={isLoading}
+                      leftIcon={<Mail className="h-4 w-4 text-gray-400" />}
+                    />
 
-                      <Mail className="absolute left-3.5 top-[43px] h-4 w-4 text-gray-400 pointer-events-none" />
-                    </div>
-
-                    <div className="relative">
-                      <CustomInput
-                        name="password"
-                        type={showPassword ? "text" : "password"}
-                        label="Password"
-                        placeholder="enter your password"
-                        value={formData.password}
-                        onChange={handleChange}
-                        error={errors.password}
-                        disabled={isLoading}
-                        className="pl-10 pr-10"
-                      />
-
-                      <Lock className="absolute left-3.5 top-[43px] h-4 w-4 text-gray-400 pointer-events-none" />
-
-                      <button
-                        type="button"
-                        onClick={() => setShowPassword((prev) => !prev)}
-                        className="absolute right-3.5 top-[43px] text-gray-400 hover:text-gray-600 focus:outline-none cursor-pointer"
-                        aria-label={showPassword ? "Hide password" : "Show password"}
-                      >
-                        {showPassword ? (
-                          <Eye className="h-4 w-4" />
-                        ) : (
-                          <EyeOff className="h-4 w-4" />
-                        )}
-                      </button>
-                    </div>
+                    <CustomInput
+                      name="password"
+                      type={showPassword ? "text" : "password"}
+                      label="Password"
+                      placeholder="enter your password"
+                      value={formData.password}
+                      onChange={handleChange}
+                      error={errors.password}
+                      disabled={isLoading}
+                      leftIcon={<Lock className="h-4 w-4 text-gray-400" />}
+                      rightIcon={
+                        <button
+                          type="button"
+                          onClick={() => setShowPassword((prev) => !prev)}
+                          className="text-gray-400 hover:text-gray-600 focus:outline-none cursor-pointer"
+                          aria-label={showPassword ? "Hide password" : "Show password"}
+                        >
+                          {showPassword ? (
+                            <Eye className="h-4 w-4" />
+                          ) : (
+                            <EyeOff className="h-4 w-4" />
+                          )}
+                        </button>
+                      }
+                    />
                   </div>
 
                   <Link

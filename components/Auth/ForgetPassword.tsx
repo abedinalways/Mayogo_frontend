@@ -46,26 +46,25 @@ export default function ForgetPassword() {
       </p>
 
       <form onSubmit={handleSubmit} className="mt-8 space-y-4">
-        <div className="relative">
-          <CustomInput
-            name="email"
-            type="email"
-            label="Email"
-            placeholder="daniel.green@gmail.com"
-            value={email}
-            onChange={(event) => {
-              setEmail(event.target.value);
-              setError("");
-            }}
-            error={error}
-            className="pl-10 text-base"
-          />
-
-          <Mail
-            className="absolute left-4 top-[43px] h-4 w-4 text-[#707070]"
-            strokeWidth={1.5}
-          />
-        </div>
+        <CustomInput
+          name="email"
+          type="email"
+          label="Email"
+          placeholder="daniel.green@gmail.com"
+          value={email}
+          onChange={(event) => {
+            setEmail(event.target.value);
+            setError("");
+          }}
+          error={error}
+          className="text-base"
+          leftIcon={
+            <Mail
+              className="h-4 w-4 text-[#707070]"
+              strokeWidth={1.5}
+            />
+          }
+        />
 
         <CustomButton
           type="submit"
