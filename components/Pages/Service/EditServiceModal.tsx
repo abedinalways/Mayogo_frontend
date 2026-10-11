@@ -33,7 +33,7 @@ export default function EditServiceModal({
   const [commission, setCommission] = useState("10");
   const [status, setStatus] = useState("active");
   const [imagePreview, setImagePreview] = useState<string | null>(null);
-  const [imageUrl, setImageUrl] = useState("");
+  const [imageUrl, setImageUrl] = useState<string | File>("");
   const [isDragging, setIsDragging] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -64,11 +64,11 @@ export default function EditServiceModal({
 
   const handleFile = (file: File) => {
     if (!file.type.match(/image\/(jpeg|png|gif|webp)/)) return;
+    setImageUrl(file);
     const reader = new FileReader();
     reader.onload = (e) => {
       const result = e.target?.result as string;
       setImagePreview(result);
-      setImageUrl(result);
     };
     reader.readAsDataURL(file);
   };
@@ -84,15 +84,23 @@ export default function EditServiceModal({
     if (!service || !name.trim()) return;
 
     try {
-      await updateService({
-        id: service.id,
-        name: name.trim(),
-        description: description.trim() || undefined,
-        categoryId: categoryId || undefined,
-        commission: parseFloat(commission) || 10,
-        imageUrl: imageUrl || undefined,
-        isActive: status === "active",
-      }).unwrap();
+      const formData = new FormData();
+      formData.append("name", name.trim());
+      if (description.trim()) {
+        formData.append("description", description.trim());
+      }
+      if (categoryId) {
+        formData.append("categoryId", categoryId);
+      }
+      formData.append("commission", String(parseFloat(commission) || 10));
+      formData.append("isActive", String(status === "active"));
+      if (imageUrl instanceof File) {
+        formData.append("imageUrl", imageUrl);
+      } else if (typeof imageUrl === "string" && imageUrl) {
+        formData.append("imageUrl", imageUrl);
+      }
+
+      await updateService({ id: service.id, formData }).unwrap();
 
       onSaved?.();
       handleClose(false);

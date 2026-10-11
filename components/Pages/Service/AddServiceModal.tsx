@@ -29,7 +29,7 @@ export default function AddServiceModal({
   const [categoryId, setCategoryId] = useState("");
   const [commission, setCommission] = useState("10");
   const [status, setStatus] = useState("active");
-  const [imageUrl, setImageUrl] = useState("");
+  const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [isDragging, setIsDragging] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -49,7 +49,7 @@ export default function AddServiceModal({
       setCategoryId("");
       setCommission("10");
       setStatus("active");
-      setImageUrl("");
+      setImageFile(null);
       setImagePreview(null);
     }
     onOpenChange(next);
@@ -57,11 +57,11 @@ export default function AddServiceModal({
 
   const handleFile = (file: File) => {
     if (!file.type.match(/image\/(jpeg|png|gif|webp)/)) return;
+    setImageFile(file);
     const reader = new FileReader();
     reader.onload = (e) => {
       const result = e.target?.result as string;
       setImagePreview(result);
-      setImageUrl(result);
     };
     reader.readAsDataURL(file);
   };
@@ -77,14 +77,19 @@ export default function AddServiceModal({
     if (!name.trim() || !categoryId) return;
 
     try {
-      await createService({
-        name: name.trim(),
-        description: description.trim() || undefined,
-        categoryId,
-        commission: parseFloat(commission) || 10,
-        imageUrl: imageUrl || undefined,
-        isActive: status === "active",
-      }).unwrap();
+      const formData = new FormData();
+      formData.append("name", name.trim());
+      if (description.trim()) {
+        formData.append("description", description.trim());
+      }
+      formData.append("categoryId", categoryId);
+      formData.append("commission", String(parseFloat(commission) || 10));
+      formData.append("isActive", String(status === "active"));
+      if (imageFile) {
+        formData.append("imageUrl", imageFile);
+      }
+
+      await createService(formData).unwrap();
 
       onCreated?.();
       handleClose(false);
