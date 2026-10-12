@@ -37,11 +37,11 @@ export default function ForgetPassword() {
         />
       </div>
 
-      <h1 className="mt-2 text-center text-[26px] font-semibold leading-[124%] text-[#103D5C]">
+      <h1 className="mt-2 text-center text-[1.625rem] font-semibold leading-[124%] text-[#103D5C]">
         Forgot Password?
       </h1>
 
-      <p className="mt-1 text-center text-[16px] leading-[160%] text-[#5A5A5A]">
+      <p className="mt-1 text-center text-base leading-[160%] text-[#5A5A5A]">
         Enter your email to reset your password
       </p>
 

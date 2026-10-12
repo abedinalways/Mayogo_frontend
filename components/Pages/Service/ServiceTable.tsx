@@ -113,20 +113,25 @@ export default function ServiceTable() {
     let items: ServiceItem[] = [];
     let total = 0;
 
-    const payload = (data as unknown) as Record<string, unknown>;
-    if (Array.isArray(payload.services)) {
-      items = payload.services as ServiceItem[];
-      total = (payload.total as number) ?? items.length;
-    } else if (Array.isArray(payload.data)) {
-      items = payload.data as ServiceItem[];
-      total = (payload.total as number) ?? items.length;
-    } else if (Array.isArray(payload.items)) {
-      items = payload.items as ServiceItem[];
-      total = (payload.total as number) ?? items.length;
-    } else if (payload.data && typeof payload.data === "object") {
-      const sub = payload.data as Record<string, unknown>;
-      items = (sub.services || sub.items || sub.data || []) as ServiceItem[];
-      total = (sub.total as number) ?? items.length;
+    if (Array.isArray(data)) {
+      items = data as ServiceItem[];
+      total = items.length;
+    } else {
+      const payload = (data as unknown) as Record<string, unknown>;
+      if (Array.isArray(payload.services)) {
+        items = payload.services as ServiceItem[];
+        total = (payload.total as number) ?? items.length;
+      } else if (Array.isArray(payload.data)) {
+        items = payload.data as ServiceItem[];
+        total = (payload.total as number) ?? items.length;
+      } else if (Array.isArray(payload.items)) {
+        items = payload.items as ServiceItem[];
+        total = (payload.total as number) ?? items.length;
+      } else if (payload.data && typeof payload.data === "object") {
+        const sub = payload.data as Record<string, unknown>;
+        items = (sub.services || sub.items || sub.data || []) as ServiceItem[];
+        total = (sub.total as number) ?? items.length;
+      }
     }
 
     return { serviceList: items, totalCount: total };
@@ -180,6 +185,8 @@ export default function ServiceTable() {
               }
               alt={item.name}
               fill
+              sizes="40px"
+              unoptimized
               className="object-cover"
             />
           </div>
@@ -210,11 +217,15 @@ export default function ServiceTable() {
       key: "commission",
       header: "Commission",
       className: "min-w-[120px] text-center",
-      cell: (item) => (
-        <span className="text-sm text-[#5A5A5A] font-['Manrope']">
-          {item.commission}%
-        </span>
-      ),
+      cell: (item) => {
+        const comm = String(item.commission ?? "0");
+        const displayCommission = comm.endsWith("%") ? comm : `${comm}%`;
+        return (
+          <span className="text-sm text-[#5A5A5A] font-['Manrope']">
+            {displayCommission}
+          </span>
+        );
+      },
     },
     {
       key: "totalJobs",
@@ -250,7 +261,12 @@ export default function ServiceTable() {
       className: "min-w-[100px] text-center",
       cell: (item) => (
         <ToggleSwitch
-          enabled={item.isActive ?? (item.status === true)}
+          enabled={
+            typeof item.isActive === "boolean"
+              ? item.isActive
+              : item.status === true ||
+                String(item.status).toLowerCase() === "active"
+          }
           isRestricted={!canManageServices}
           onChange={(v) =>
             executeIfAllowed(

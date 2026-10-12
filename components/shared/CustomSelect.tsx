@@ -73,6 +73,7 @@ export function CustomSelect({
       <Select
         value={value}
         defaultValue={defaultValue}
+        items={options}
         onValueChange={(val) => onValueChange?.(val ?? "")}
         disabled={disabled}
       >
@@ -87,7 +88,16 @@ export function CustomSelect({
             triggerClassName,
           )}
         >
-          <SelectValue placeholder={placeholder} />
+          <SelectValue placeholder={placeholder}>
+            {(val) => {
+              const activeVal = val ?? value;
+              if (activeVal === undefined || activeVal === null || activeVal === "") {
+                return placeholder;
+              }
+              const found = options.find((opt) => opt.value === activeVal);
+              return found ? found.label : String(activeVal);
+            }}
+          </SelectValue>
         </SelectTrigger>
 
         <SelectContent

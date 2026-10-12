@@ -106,14 +106,12 @@ export function TableToolbar({
       {/* 4. Panel Filter Type (Expandable Panel with Checkboxes/Radios/Chips) */}
       {showFilter && (
         <CustomDropdown
+          triggerClassName="flex h-10 items-center gap-2 rounded-xl border border-[#e4ebf1] bg-white px-4 py-2 text-sm font-medium text-[#0f3453] transition-colors hover:bg-slate-50 focus:outline-none cursor-pointer"
           trigger={
-            <button
-              type="button"
-              className="flex h-10 items-center gap-2 rounded-xl border border-[#e4ebf1] bg-white px-4 py-2 text-sm font-medium text-[#0f3453] transition-colors hover:bg-slate-50 focus:outline-none"
-            >
+            <>
               <SlidersHorizontal className="h-4 w-4 shrink-0 text-[#0f3453]" />
               <span>Filters</span>
-            </button>
+            </>
           }
         >
           {({ close, open }) => (
