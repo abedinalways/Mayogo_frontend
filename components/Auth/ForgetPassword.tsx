@@ -68,17 +68,17 @@ export default function ForgetPassword() {
 
         <CustomButton
           type="submit"
-          className="cursor-pointer text-[14px]"
+          className="cursor-pointer text-sm"
         >
           Send Code
         </CustomButton>
 
         <div className="flex justify-center">
-          <span className="text-[#5A5A5A] text-[14px] font-normal leading-[100%]">
+          <span className="text-[#5A5A5A] text-sm font-normal leading-[100%]">
             Don’t have an account?{" "}
             <Link
               href="/login"
-              className="text-[#103D5C] text-[14px] font-medium leading-[100%]"
+              className="text-[#103D5C] text-sm font-medium leading-[100%]"
             >
               Back to login
             </Link>
