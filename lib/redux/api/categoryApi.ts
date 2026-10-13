@@ -100,21 +100,34 @@ export const categoryApi = baseApi.injectEndpoints({
         const payload =
           "data" in response && response.data ? response.data : response;
 
+        const meta =
+          response && typeof response === "object" && "meta" in response
+            ? (
+                response as {
+                  meta?: {
+                    total?: number;
+                    limit?: number;
+                    offset?: number;
+                  };
+                }
+              ).meta
+            : undefined;
+
         if (Array.isArray(payload)) {
           return {
             services: payload,
-            total: payload.length,
-            limit: payload.length,
-            offset: 0,
+            total: meta?.total ?? payload.length,
+            limit: meta?.limit ?? payload.length,
+            offset: meta?.offset ?? 0,
           };
         }
 
         const obj = payload as ServiceListResponseData;
         return {
           services: obj.services || obj.data || obj.items || [],
-          total: obj.total ?? (obj.services?.length || 0),
-          limit: obj.limit || 20,
-          offset: obj.offset || 0,
+          total: meta?.total ?? obj.total ?? (obj.services?.length || 0),
+          limit: meta?.limit ?? obj.limit ?? 20,
+          offset: meta?.offset ?? obj.offset ?? 0,
         };
       },
       providesTags: (result) =>

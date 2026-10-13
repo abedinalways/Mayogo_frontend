@@ -6,6 +6,18 @@ const nextConfig: NextConfig = {
     remotePatterns: [
       {
         protocol: "https",
+        hostname: "mayogo.pixelstack.cloud",
+      },
+      {
+        protocol: "http",
+        hostname: "mayogo.pixelstack.cloud",
+      },
+      {
+        protocol: "https",
+        hostname: "**.pixelstack.cloud",
+      },
+      {
+        protocol: "https",
         hostname: "images.unsplash.com",
       },
       {

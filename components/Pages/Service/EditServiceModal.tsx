@@ -50,8 +50,10 @@ export default function EditServiceModal({
       setName(service.name || "");
       setDescription(service.description || "");
       const catId = typeof service.category === "object" ? service.category?.id : service.categoryId;
-      setCategoryId(catId || service.categoryId || "");
-      setCommission(String(service.commission || 10));
+      const matchedCat = (categories || []).find((c) => c.name === service.category || c.id === service.categoryId);
+      setCategoryId(catId || matchedCat?.id || service.categoryId || "");
+      const rawComm = String(service.commission ?? "10").replace("%", "");
+      setCommission(rawComm || "10");
       setStatus(service.isActive ? "active" : "inactive");
       setImagePreview(service.imageUrl || service.image || null);
       setImageUrl(service.imageUrl || service.image || "");
