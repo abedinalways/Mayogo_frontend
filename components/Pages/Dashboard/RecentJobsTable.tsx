@@ -56,37 +56,43 @@ export function RecentJobsTable() {
 
   const rawJobs: AdminJobItem[] = Array.isArray(jobsResponse?.data)
     ? jobsResponse.data
-    : (jobsResponse?.data as { jobs?: AdminJobItem[]; data?: AdminJobItem[] })?.jobs ||
-      (jobsResponse?.data as { jobs?: AdminJobItem[]; data?: AdminJobItem[] })?.data ||
+    : (jobsResponse?.data as unknown as { jobs?: AdminJobItem[]; data?: AdminJobItem[] })?.jobs ||
+      (jobsResponse?.data as unknown as { jobs?: AdminJobItem[]; data?: AdminJobItem[] })?.data ||
       [];
 
   const jobs: JobRecord[] = rawJobs.map((item) => {
+    const rawPaymentAmount =
+      typeof item.payment === "object" && item.payment !== null
+        ? (item.payment as any).amount
+        : undefined;
+    const rawAmt =
+      rawPaymentAmount ??
+      item.latestQuote?.amount ??
+      item.amount ??
+      item.totalAmount ??
+      0;
     const amountVal =
-      typeof item.amount === "number"
-        ? `$${item.amount.toLocaleString()}`
-        : item.amount
-        ? `${item.amount}`
-        : typeof item.totalAmount === "number"
-        ? `$${item.totalAmount.toLocaleString()}`
-        : item.totalAmount
-        ? `${item.totalAmount}`
+      typeof rawAmt === "number"
+        ? `$${rawAmt.toLocaleString()}`
+        : rawAmt
+        ? `$${(parseFloat(String(rawAmt || 0)) || 0).toLocaleString()}`
         : "$0";
 
     return {
-      id: item.jobId || item.requestNumber || `#${item.id.slice(0, 8)}`,
+      id: item.requestNumber || item.jobId || `#${item.id.slice(0, 8)}`,
       rawId: item.id,
       service: {
         name: item.service?.name || item.title || "Service Request",
-        category: item.service?.category || "General",
-        image: item.service?.image || "https://placehold.co/28x28",
+        category: item.category?.name || item.service?.category || "General",
+        image: item.thumbnailUrl || item.service?.image || "https://placehold.co/28x28",
       },
       client: {
         name: item.client?.fullName || item.client?.name || "Client",
-        avatar: item.client?.avatar || "https://placehold.co/28x28",
+        avatar: item.client?.avatarUrl || item.client?.avatar || "https://placehold.co/28x28",
       },
       expert: {
         name: item.expert?.fullName || item.expert?.name || "Unassigned",
-        avatar: item.expert?.avatar || "https://placehold.co/28x28",
+        avatar: item.expert?.avatarUrl || item.expert?.avatar || "https://placehold.co/28x28",
       },
       status: mapStatus(item.status),
       amount: amountVal,

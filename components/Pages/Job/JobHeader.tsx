@@ -24,21 +24,24 @@ export function JobHeader({
   date = "Jul 27, 2026",
   time = "11:00 AM",
 }: JobHeaderProps) {
-  const displayJobId = job?.jobId || job?.requestNumber || jobId;
+  const displayJobId = job?.requestNumber || job?.jobId || jobId;
   const displayTitle = job?.title || job?.service?.name || title;
-  const displayCategory = job?.service?.category || category;
-  const displayLevel = job?.serviceType || level;
+  const displayCategory = job?.category?.name || job?.service?.category || category;
+  const displayLevel =
+    job?.serviceType ||
+    (job?.appointment?.estimatedDuration
+      ? job.appointment.estimatedDuration.replace(/_/g, " ")
+      : level);
   const displayStatus = job?.status || status;
 
   let displayDate = date;
   let displayTime = time;
 
-  if (job?.appointment?.date) {
-    displayDate = job.appointment.date;
-    displayTime = job.appointment.time || time;
-  } else if (job?.createdAt) {
+  const rawDateTime =
+    job?.appointment?.scheduledAt || job?.submittedAt || job?.createdAt;
+  if (rawDateTime) {
     try {
-      const dt = new Date(job.createdAt);
+      const dt = new Date(rawDateTime);
       displayDate = new Intl.DateTimeFormat("en-GB", {
         day: "numeric",
         month: "short",
@@ -50,13 +53,17 @@ export function JobHeader({
         hour12: true,
       }).format(dt);
     } catch {
-      displayDate = job.createdAt;
+      displayDate = String(rawDateTime);
     }
+  } else if (job?.appointment?.date) {
+    displayDate = job.appointment.date;
+    displayTime = job.appointment.time || time;
   }
 
-  const isCompleted = displayStatus.toLowerCase().includes("complete");
-  const isPending = displayStatus.toLowerCase().includes("pending");
-  const isDisputed = displayStatus.toLowerCase().includes("dispute");
+  const normalizedStatus = String(displayStatus).toLowerCase();
+  const isCompleted = normalizedStatus.includes("complete");
+  const isPending = normalizedStatus.includes("pending");
+  const isDisputed = normalizedStatus.includes("dispute");
 
   let statusBadgeClasses = "border-[#c1f0e2] bg-[#ebfbf5] text-[#108a00]";
   let statusDotClass = "bg-[#108a00]";
@@ -77,7 +84,12 @@ export function JobHeader({
       <div className="mb-6 rounded-2xl overflow-hidden max-h-56 bg-slate-100">
         <img
           className="w-full h-full object-cover"
-          src={job?.service?.image || "/job-cover.png"}
+          src={
+            job?.thumbnailUrl ||
+            job?.images?.[0]?.fileUrl ||
+            job?.service?.image ||
+            "/job-cover.png"
+          }
           alt="job cover"
         />
       </div>
@@ -101,24 +113,25 @@ export function JobHeader({
           </div>
 
           <div
-            className={`inline-flex items-center gap-1.5 rounded-md border px-2.5 py-1 text-xs font-medium ${statusBadgeClasses}`}
+            className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-medium ${statusBadgeClasses}`}
           >
-            <span className={`h-2 w-2 rounded-full ${statusDotClass}`} />
-            <span>{displayStatus}</span>
+            <span className={`h-1.5 w-1.5 rounded-full ${statusDotClass}`} />
+            <span>{displayStatus.replace(/_/g, " ")}</span>
           </div>
         </div>
 
-        <div className="flex items-center gap-1.5">
-          <span className="rounded border border-[#d2e9fb] bg-[#f0f7ff] px-2 py-0.5 text-xs font-medium text-[#1e72e2]">
-            {displayDate}
-          </span>
-          <span className="rounded border border-[#d2e9fb] bg-[#f0f7ff] px-2 py-0.5 text-xs font-medium text-[#1e72e2]">
-            {displayTime}
-          </span>
+        <div className="flex items-center gap-4 text-xs font-normal text-[#5c7285]">
+          <div className="flex items-center gap-1">
+            <span className="font-medium text-[#0a2540]">Date:</span>
+            <span>{displayDate}</span>
+          </div>
+
+          <div className="flex items-center gap-1">
+            <span className="font-medium text-[#0a2540]">Time:</span>
+            <span>{displayTime}</span>
+          </div>
         </div>
       </div>
     </section>
   );
 }
-
-export default JobHeader;

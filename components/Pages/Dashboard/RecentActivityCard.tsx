@@ -103,8 +103,8 @@ export function RecentActivityCard({
 
   const rawJobs: AdminJobItem[] = Array.isArray(jobsData?.data)
     ? jobsData.data
-    : (jobsData?.data as { jobs?: AdminJobItem[]; data?: AdminJobItem[] })?.jobs ||
-      (jobsData?.data as { jobs?: AdminJobItem[]; data?: AdminJobItem[] })?.data ||
+    : (jobsData?.data as unknown as { jobs?: AdminJobItem[]; data?: AdminJobItem[] })?.jobs ||
+      (jobsData?.data as unknown as { jobs?: AdminJobItem[]; data?: AdminJobItem[] })?.data ||
       [];
 
   const dynamicActivities: ActivityItem[] = [];
