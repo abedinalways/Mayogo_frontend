@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useMemo } from "react";
 import { ChevronDown, RotateCw } from "lucide-react";
 import {
   BarChart,
@@ -11,6 +11,8 @@ import {
   Tooltip,
   ResponsiveContainer,
 } from "recharts";
+import { useGetRevenueTrendQuery } from "@/lib/redux/api/analyticsApi";
+import { AnalyticsTimeframe } from "@/types/analytics.types";
 
 interface EarningsData {
   month: string;
@@ -20,7 +22,7 @@ interface EarningsData {
   formattedCommission: string;
 }
 
-const data: EarningsData[] = [
+const DEFAULT_DATA: EarningsData[] = [
   { month: "Jan", revenue: 2650, commission: 2250, formattedRevenue: "$120.5K", formattedCommission: "$16.2k" },
   { month: "Feb", revenue: 2880, commission: 2600, formattedRevenue: "$122.8K", formattedCommission: "$17.1k" },
   { month: "Mar", revenue: 2950, commission: 2680, formattedRevenue: "$123.4K", formattedCommission: "$17.8k" },
@@ -35,27 +37,52 @@ const data: EarningsData[] = [
   { month: "Dec", revenue: 3450, commission: 3200, formattedRevenue: "$124.2K", formattedCommission: "$18.2k" },
 ];
 
+const TIME_RANGE_MAP: Record<string, AnalyticsTimeframe> = {
+  "Last 7 days": "last_7_days",
+  "Last 30 days": "last_30_days",
+  "Last 90 days": "last_90_days",
+  "Last 12 months": "last_12_months",
+};
+
 const TIME_RANGES = ["Last 7 days", "Last 30 days", "Last 90 days", "Last 12 months"];
 
-const CustomTooltip = ({ active, payload, label }: any) => {
+interface TooltipPayloadEntry {
+  payload?: EarningsData;
+  dataKey?: string;
+  value?: number;
+}
+
+interface CustomTooltipProps {
+  active?: boolean;
+  payload?: TooltipPayloadEntry[];
+  label?: string;
+}
+
+const CustomTooltip = ({ active, payload, label }: CustomTooltipProps) => {
   if (active && payload && payload.length) {
-    const itemData = payload[0]?.payload as EarningsData;
+    const itemData = payload[0]?.payload as EarningsData | undefined;
     const fullMonthNames: Record<string, string> = {
       Jan: "January", Feb: "February", Mar: "March", Apr: "April",
       May: "May", Jun: "June", Jul: "July", Aug: "August",
-      Sep: "September", Oct: "October", Nov: "November", Dec: "December"
+      Sep: "September", Oct: "October", Nov: "November", Dec: "December",
     };
-    
+
     return (
       <div className="rounded-xl border border-slate-100 bg-white p-3.5 shadow-xl font-['Manrope'] min-w-[180px]">
-        <p className="text-xs font-semibold text-slate-800 mb-2">{fullMonthNames[label] || label}</p>
+        <p className="text-xs font-semibold text-slate-800 mb-2">
+          {label && fullMonthNames[label] ? fullMonthNames[label] : label}
+        </p>
         <div className="flex items-center justify-between gap-4 text-xs mb-1">
           <span className="text-slate-500">Total Revenue</span>
-          <span className="font-bold text-[#0e3a5b]">{itemData?.formattedRevenue || "$124.5K"}</span>
+          <span className="font-bold text-[#0e3a5b]">
+            {itemData?.formattedRevenue || `$${Number(itemData?.revenue || 0).toLocaleString()}`}
+          </span>
         </div>
         <div className="flex items-center justify-between gap-4 text-xs">
           <span className="text-slate-500">Total Commission</span>
-          <span className="font-bold text-[#f2ad1b]">{itemData?.formattedCommission || "$18.4k"}</span>
+          <span className="font-bold text-[#f2ad1b]">
+            {itemData?.formattedCommission || `$${Number(itemData?.commission || 0).toLocaleString()}`}
+          </span>
         </div>
       </div>
     );
@@ -63,9 +90,60 @@ const CustomTooltip = ({ active, payload, label }: any) => {
   return null;
 };
 
-export function RevenueTrend() {
+interface RevenueTrendProps {
+  timeframe?: AnalyticsTimeframe;
+}
+
+export function RevenueTrend({ timeframe: parentTimeframe }: RevenueTrendProps) {
   const [timeRange, setTimeRange] = useState("Last 12 months");
   const [dropdownOpen, setDropdownOpen] = useState(false);
+
+  const activeTimeframe = parentTimeframe || TIME_RANGE_MAP[timeRange] || "last_12_months";
+
+  const {
+    data: apiResponse,
+    isFetching,
+    refetch,
+  } = useGetRevenueTrendQuery({ timeframe: activeTimeframe });
+
+  const chartData = useMemo<EarningsData[]>(() => {
+    const rawList = Array.isArray(apiResponse)
+      ? apiResponse
+      : apiResponse?.trend || apiResponse?.items || apiResponse?.data || [];
+
+    if (!rawList || rawList.length === 0) {
+      return DEFAULT_DATA;
+    }
+
+    return rawList.map((item) => {
+      const rev = Number(item.revenue || 0);
+      const comm = Number(item.commission || 0);
+      return {
+        month: String(item.month || ""),
+        revenue: rev,
+        commission: comm,
+        formattedRevenue:
+          item.formattedRevenue ||
+          (rev >= 1000 ? `$${(rev / 1000).toFixed(1)}K` : `$${rev.toLocaleString()}`),
+        formattedCommission:
+          item.formattedCommission ||
+          (comm >= 1000 ? `$${(comm / 1000).toFixed(1)}K` : `$${comm.toLocaleString()}`),
+      };
+    });
+  }, [apiResponse]);
+
+  const maxVal = useMemo(() => {
+    const highest = Math.max(
+      ...chartData.map((d) => Math.max(d.revenue, d.commission)),
+      1000
+    );
+    return Math.ceil(highest / 1000) * 1000;
+  }, [chartData]);
+
+  const ticks = useMemo(() => {
+    const step = maxVal / 5;
+    return [step, step * 2, step * 3, step * 4, maxVal];
+  }, [maxVal]);
 
   return (
     <div className="card-container">
@@ -114,10 +192,12 @@ export function RevenueTrend() {
           {/* Refresh Button */}
           <button
             type="button"
+            onClick={() => refetch()}
             className="flex h-8 w-8 items-center justify-center rounded-lg border border-slate-200 bg-white text-amber-500 hover:bg-slate-50 transition-colors cursor-pointer"
             aria-label="Refresh data"
+            title="Refresh Revenue Trend"
           >
-            <RotateCw className="h-3.5 w-3.5 text-amber-500" />
+            <RotateCw className={`h-3.5 w-3.5 text-amber-500 ${isFetching ? "animate-spin" : ""}`} />
           </button>
         </div>
       </div>
@@ -126,7 +206,7 @@ export function RevenueTrend() {
       <div className="mt-6 h-[280px] w-full">
         <ResponsiveContainer width="100%" height="100%">
           <BarChart
-            data={data}
+            data={chartData}
             margin={{ top: 10, right: 10, left: -20, bottom: 0 }}
             barGap={4}
           >
@@ -139,9 +219,9 @@ export function RevenueTrend() {
               axisLine={false}
               tickLine={false}
               tick={{ fill: "#8a9bab", fontSize: 12 }}
-              domain={[0, 5000]}
-              ticks={[1000, 2000, 3000, 4000, 5000]}
-              tickFormatter={(val) => `$${val / 1000}K`}
+              domain={[0, maxVal]}
+              ticks={ticks}
+              tickFormatter={(val) => (val >= 1000 ? `$${val / 1000}K` : `$${val}`)}
             />
             <XAxis
               dataKey="month"
