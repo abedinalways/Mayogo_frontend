@@ -10,6 +10,11 @@ import {
   UpdatePlanDto,
   EscrowSettings,
   UpdateEscrowDto,
+  NotificationTargetType,
+  NotificationSettingItem,
+  UpdateNotificationDto,
+  ToggleAllNotificationsDto,
+  NotificationCategoryItem,
 } from "@/types/settings.types";
 
 export const settingsApi = baseApi.injectEndpoints({
@@ -264,6 +269,188 @@ export const settingsApi = baseApi.injectEndpoints({
       },
       invalidatesTags: [{ type: "Settings", id: "ESCROW" }],
     }),
+
+    // ── Notification Settings ───────────────────────────────────────────
+    getAllNotifications: builder.query<any, void>({
+      query: () => ({
+        url: "/admin/settings/notifications",
+        method: "GET",
+      }),
+      transformResponse: (response: ApiResponse<any> | any) => {
+        if (response && "data" in response && response.data !== undefined) {
+          return response.data;
+        }
+        return response;
+      },
+      providesTags: [{ type: "Settings", id: "NOTIFICATIONS" }],
+    }),
+
+    getNotificationsByTargetType: builder.query<
+      NotificationSettingItem[],
+      NotificationTargetType
+    >({
+      query: (targetType) => ({
+        url: `/admin/settings/notifications/${targetType}`,
+        method: "GET",
+      }),
+      transformResponse: (
+        response: ApiResponse<any> | any,
+        _meta,
+        targetType
+      ): NotificationSettingItem[] => {
+        const raw =
+          response && "data" in response && response.data !== undefined
+            ? response.data
+            : response;
+
+        if (Array.isArray(raw)) {
+          return raw.map((item) =>
+            typeof item === "string"
+              ? { category: item, enabled: true, targetType }
+              : { ...item, targetType: item.targetType || targetType }
+          );
+        }
+
+        if (raw && typeof raw === "object") {
+          const list =
+            raw.items ||
+            raw.notifications ||
+            raw.settings ||
+            raw.categories ||
+            raw.data;
+          if (Array.isArray(list)) {
+            return list.map((item: any) =>
+              typeof item === "string"
+                ? { category: item, enabled: true, targetType }
+                : { ...item, targetType: item.targetType || targetType }
+            );
+          }
+
+          // If returned as an object map: { JOB_UPDATES: true, ... }
+          const entries = Object.entries(raw).filter(
+            ([k]) =>
+              ![
+                "id",
+                "_id",
+                "createdAt",
+                "updatedAt",
+                "targetType",
+                "success",
+                "statusCode",
+                "message",
+              ].includes(k)
+          );
+          if (entries.length > 0) {
+            return entries.map(([cat, val]) => ({
+              category: cat,
+              enabled:
+                typeof val === "boolean"
+                  ? val
+                  : Boolean((val as any)?.enabled ?? true),
+              targetType,
+              title: (val as any)?.title || (val as any)?.name,
+              description: (val as any)?.description,
+            }));
+          }
+        }
+
+        return [];
+      },
+      providesTags: (_result, _error, targetType) => [
+        { type: "Settings", id: `NOTIFICATIONS_${targetType}` },
+        { type: "Settings", id: "NOTIFICATIONS" },
+      ],
+    }),
+
+    getNotificationCategories: builder.query<NotificationCategoryItem[], void>({
+      query: () => ({
+        url: "/admin/settings/notifications/categories",
+        method: "GET",
+      }),
+      transformResponse: (response: ApiResponse<any> | any) => {
+        const raw =
+          response && "data" in response && response.data !== undefined
+            ? response.data
+            : response;
+        if (Array.isArray(raw)) return raw;
+        if (raw && typeof raw === "object") {
+          if (Array.isArray(raw.categories)) return raw.categories;
+          if (Array.isArray(raw.items)) return raw.items;
+          if (Array.isArray(raw.data)) return raw.data;
+        }
+        return [];
+      },
+      providesTags: [{ type: "Settings", id: "NOTIFICATION_CATEGORIES" }],
+    }),
+
+    updateNotification: builder.mutation<
+      NotificationSettingItem,
+      UpdateNotificationDto
+    >({
+      query: (body) => ({
+        url: "/admin/settings/notifications",
+        method: "PATCH",
+        body,
+      }),
+      transformResponse: (
+        response: ApiResponse<NotificationSettingItem> | NotificationSettingItem
+      ) => {
+        if (response && "data" in response && response.data !== undefined) {
+          return response.data;
+        }
+        return response as NotificationSettingItem;
+      },
+      invalidatesTags: (_result, _error, { targetType }) => [
+        { type: "Settings", id: `NOTIFICATIONS_${targetType}` },
+        { type: "Settings", id: "NOTIFICATIONS" },
+      ],
+    }),
+
+    toggleAllNotifications: builder.mutation<
+      { success: boolean; message?: string },
+      ToggleAllNotificationsDto
+    >({
+      query: (body) => ({
+        url: "/admin/settings/notifications/toggle-all",
+        method: "POST",
+        body,
+      }),
+      transformResponse: (
+        response: ApiResponse<any> | { success: boolean; message?: string }
+      ) => {
+        if (response && "data" in response && response.data !== undefined) {
+          return response.data;
+        }
+        return response as { success: boolean; message?: string };
+      },
+      invalidatesTags: (_result, _error, { targetType }) => [
+        { type: "Settings", id: `NOTIFICATIONS_${targetType}` },
+        { type: "Settings", id: "NOTIFICATIONS" },
+      ],
+    }),
+
+    resetNotifications: builder.mutation<
+      { success: boolean; message?: string },
+      void
+    >({
+      query: () => ({
+        url: "/admin/settings/notifications/reset",
+        method: "POST",
+      }),
+      transformResponse: (
+        response: ApiResponse<any> | { success: boolean; message?: string }
+      ) => {
+        if (response && "data" in response && response.data !== undefined) {
+          return response.data;
+        }
+        return response as { success: boolean; message?: string };
+      },
+      invalidatesTags: [
+        { type: "Settings", id: "NOTIFICATIONS" },
+        { type: "Settings", id: "NOTIFICATIONS_CLIENT" },
+        { type: "Settings", id: "NOTIFICATIONS_EXPERT" },
+      ],
+    }),
   }),
 });
 
@@ -281,5 +468,11 @@ export const {
   useGetEscrowSettingsQuery,
   useUpdateEscrowSettingsMutation,
   useResetEscrowSettingsMutation,
+  useGetAllNotificationsQuery,
+  useGetNotificationsByTargetTypeQuery,
+  useGetNotificationCategoriesQuery,
+  useUpdateNotificationMutation,
+  useToggleAllNotificationsMutation,
+  useResetNotificationsMutation,
 } = settingsApi;
 

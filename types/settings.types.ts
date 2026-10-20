@@ -125,4 +125,41 @@ export interface UpdateEscrowDto {
   [key: string]: any;
 }
 
+export type NotificationTargetType = "CLIENT" | "EXPERT";
+
+export interface NotificationSettingItem {
+  id?: string;
+  category: string;
+  title?: string;
+  name?: string;
+  description?: string;
+  enabled: boolean;
+  targetType?: NotificationTargetType;
+  createdAt?: string;
+  updatedAt?: string;
+  [key: string]: any;
+}
+
+export interface UpdateNotificationDto {
+  targetType: NotificationTargetType;
+  category: string;
+  enabled: boolean;
+}
+
+export interface ToggleAllNotificationsDto {
+  targetType: NotificationTargetType;
+  enabled: boolean;
+}
+
+export interface NotificationCategoryItem {
+  id?: string;
+  key?: string;
+  name?: string;
+  category?: string;
+  targetType?: NotificationTargetType;
+  description?: string;
+  [key: string]: any;
+}
+
+
 

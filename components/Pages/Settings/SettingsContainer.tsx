@@ -58,6 +58,18 @@ export function SettingsContainer() {
           detail: { section: "payment-escrow" },
         })
       );
+    } else if (activeSection === "notifications-client") {
+      window.dispatchEvent(
+        new CustomEvent("SETTINGS_SAVE_REQUEST", {
+          detail: { section: "notifications-client" },
+        })
+      );
+    } else if (activeSection === "notifications-expert") {
+      window.dispatchEvent(
+        new CustomEvent("SETTINGS_SAVE_REQUEST", {
+          detail: { section: "notifications-expert" },
+        })
+      );
     } else {
       setIsSaving(true);
       setTimeout(() => {
@@ -93,10 +105,10 @@ export function SettingsContainer() {
 
           <div className="flex-1 min-h-[500px]">
             {activeSection === "notifications-client" && (
-              <NotificationsClientSettings />
+              <NotificationsClientSettings onSavingChange={setIsSaving} />
             )}
             {activeSection === "notifications-expert" && (
-              <NotificationsExpertSettings />
+              <NotificationsExpertSettings onSavingChange={setIsSaving} />
             )}
             {activeSection === "general" && (
               <GeneralSettings onSavingChange={setIsSaving} />
