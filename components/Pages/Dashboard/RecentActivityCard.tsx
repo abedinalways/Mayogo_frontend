@@ -95,11 +95,11 @@ export function RecentActivityCard({
         ?.items ||
       [];
 
-  const rawDisputes: DisputeItem[] =
-    disputesData?.disputes ||
-    disputesData?.data ||
-    disputesData?.items ||
-    [];
+  const rawDisputes: DisputeItem[] = Array.isArray(disputesData?.data)
+    ? disputesData.data
+    : (disputesData as unknown as { disputes?: DisputeItem[]; items?: DisputeItem[] })?.disputes ||
+      (disputesData as unknown as { disputes?: DisputeItem[]; items?: DisputeItem[] })?.items ||
+      [];
 
   const rawJobs: AdminJobItem[] = Array.isArray(jobsData?.data)
     ? jobsData.data

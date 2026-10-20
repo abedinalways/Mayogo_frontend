@@ -32,6 +32,7 @@ export interface DisputeRecord {
   id: string;
   ticketId: string;
   jobId: string;
+  rawJobId?: string | null;
   service: {
     name: string;
     category: string;
@@ -49,8 +50,8 @@ export interface DisputeRecord {
   riskLevel: RiskLevel;
   dateOpened: string;
   status: DisputeStatus;
-  assignedAdmin: string;
-  assignedAdminId?: string;
+  assignedAdminName: string;
+  assignedAdminId: string;
 }
 
 const disputeSortOptions: SortOption[] = [
@@ -188,33 +189,31 @@ export function DisputesTable() {
     }
   };
 
-  const { disputeList, totalCount } = useMemo(() => {
-    if (!data) return { disputeList: [], totalCount: 0 };
+  const { disputeList, totalCount, totalPages } = useMemo(() => {
+    if (!data) return { disputeList: [], totalCount: 0, totalPages: 1 };
 
     let items: DisputeItem[] = [];
     let total = 0;
+    let pages = 1;
 
-    const payload = (data as unknown) as Record<string, unknown>;
-    if (Array.isArray(payload.disputes)) {
-      items = payload.disputes as DisputeItem[];
-      total = (payload.total as number) ?? items.length;
-    } else if (Array.isArray(payload.tickets)) {
-      items = payload.tickets as DisputeItem[];
-      total = (payload.total as number) ?? items.length;
-    } else if (Array.isArray(payload.items)) {
-      items = payload.items as DisputeItem[];
-      total = (payload.total as number) ?? items.length;
-    } else if (Array.isArray(payload.data)) {
-      items = payload.data as DisputeItem[];
-      total = (payload.total as number) ?? items.length;
-    } else if (payload.data && typeof payload.data === "object") {
-      const sub = payload.data as Record<string, unknown>;
-      items = (sub.disputes || sub.tickets || sub.items || sub.data || []) as DisputeItem[];
-      total = (sub.total as number) ?? items.length;
+    if (Array.isArray(data.data)) {
+      items = data.data;
+      total = data.meta?.total ?? data.data.length;
+      pages = data.meta?.totalPages ?? Math.max(1, Math.ceil(total / pageSize));
+    } else if (data.data) {
+      items =
+        (data.data as any).disputes ||
+        (data.data as any).tickets ||
+        (data.data as any).items ||
+        (data.data as any).data ||
+        [];
+      total = (data.data as any).total ?? data.meta?.total ?? items.length;
+      pages = data.meta?.totalPages ?? Math.max(1, Math.ceil(total / pageSize));
     }
 
     const mapped: DisputeRecord[] = items.map((item, index) => {
-      const rawStatus = (item.status || "OPEN").toUpperCase();
+      // Status mapping
+      const rawStatus = String(item.status || "OPEN").toUpperCase();
       let status: DisputeStatus = "Open";
       if (rawStatus === "UNDER_REVIEW") status = "Under Review";
       else if (rawStatus === "AWAITING_CLIENT") status = "Awaiting Client";
@@ -222,15 +221,28 @@ export function DisputesTable() {
       else if (rawStatus === "RESOLVED") status = "Resolved";
       else if (rawStatus === "REJECTED" || rawStatus === "CLOSED") status = "Rejected";
 
-      const rawRisk = (item.riskLevel || item.priority || "MEDIUM").toUpperCase();
+      // Priority mapping
+      const rawRisk = String(item.riskLevel || item.priority || "MEDIUM").toUpperCase();
       let riskLevel: RiskLevel = "Medium";
       if (rawRisk === "LOW") riskLevel = "Low";
       else if (rawRisk === "HIGH") riskLevel = "High";
       else if (rawRisk === "URGENT") riskLevel = "Urgent";
 
-      const clientName = item.client?.fullName || item.client?.name || "Client Name";
-      const expertName = item.expert?.fullName || item.expert?.name || "Expert Name";
+      // Client & Expert
+      const clientName = item.client?.fullName || item.client?.name || "Client User";
+      const expertName = item.expert?.fullName || item.expert?.name || (item.job ? "Unassigned Expert" : "Not Applicable");
 
+      const clientAvatar =
+        item.client?.avatarUrl ||
+        item.client?.avatar ||
+        `https://placehold.co/80x80?text=${encodeURIComponent(clientName.charAt(0))}`;
+
+      const expertAvatar =
+        item.expert?.avatarUrl ||
+        item.expert?.avatar ||
+        `https://placehold.co/80x80?text=${encodeURIComponent(expertName.charAt(0))}`;
+
+      // Date Opened
       let dateOpened = "N/A";
       const rawDate = item.dateOpened || item.createdAt;
       if (rawDate) {
@@ -241,48 +253,87 @@ export function DisputesTable() {
             year: "numeric",
           }).format(new Date(rawDate));
         } catch {
-          dateOpened = rawDate;
+          dateOpened = String(rawDate);
         }
       }
 
+      // Safe Assigned Admin Extraction (CRITICAL: item.assignedAdmin is an Object in real API)
+      let assignedAdminName = "Unassigned";
+      let assignedAdminId = "";
+      if (typeof item.assignedAdmin === "object" && item.assignedAdmin !== null) {
+        assignedAdminName = item.assignedAdmin.fullName || (item.assignedAdmin as any).name || "Assigned Admin";
+        assignedAdminId = item.assignedAdmin.id || "";
+      } else if (typeof item.assignedAdmin === "string" && item.assignedAdmin.trim()) {
+        assignedAdminName = item.assignedAdmin;
+        assignedAdminId = item.assignedAdminId || "";
+      }
+
+      // Job Display and Raw ID
+      const displayJobId =
+        item.job?.requestNumber ||
+        (item.jobId
+          ? item.jobId.startsWith("#")
+            ? item.jobId
+            : `#${item.jobId.slice(0, 8)}`
+          : "N/A");
+      const rawJobId = item.job?.id || item.jobId || null;
+
+      // Service & Category
+      const serviceName =
+        item.job?.service?.name ||
+        item.service?.name ||
+        item.subject ||
+        "General Service";
+      const categoryName =
+        item.job?.category?.name ||
+        item.service?.category ||
+        (item.category ? item.category.replace(/_/g, " ") : "General Issue");
+      const serviceImage =
+        item.job?.images?.[0]?.fileUrl ||
+        item.service?.image ||
+        "https://images.unsplash.com/photo-1621905251189-08b45d6a269e?w=100&auto=format&fit=crop&q=80";
+
+      // Dispute Reason
+      const disputeReason =
+        item.disputeReason ||
+        item.reason ||
+        (item.category ? item.category.replace(/_/g, " ") : "General Issue");
+
       return {
         id: item.id,
-        ticketId: item.ticketId || item.ticketNumber || `#DSP-${10480 + index}`,
-        jobId: item.jobId ? (item.jobId.startsWith("#") ? item.jobId : `#${item.jobId}`) : `#JB${String(index + 1).padStart(3, "0")}`,
+        ticketId: item.ticketNumber || item.ticketId || `#DSP-${10480 + index}`,
+        jobId: displayJobId,
+        rawJobId,
         service: {
-          name: item.service?.name || item.subject || "Air Conditioner Repair",
-          category: item.service?.category || item.category || "Repair & Diagnostic",
-          image:
-            item.service?.image ||
-            "https://images.unsplash.com/photo-1621905251189-08b45d6a269e?w=100&auto=format&fit=crop&q=80",
+          name: serviceName,
+          category: categoryName,
+          image: serviceImage,
         },
         client: {
           name: clientName,
-          avatar:
-            item.client?.avatar ||
-            item.client?.avatarUrl ||
-            `https://placehold.co/80x80?text=${encodeURIComponent(clientName.charAt(0))}`,
+          avatar: clientAvatar,
         },
         expert: {
           name: expertName,
-          avatar:
-            item.expert?.avatar ||
-            item.expert?.avatarUrl ||
-            `https://placehold.co/80x80?text=${encodeURIComponent(expertName.charAt(0))}`,
+          avatar: expertAvatar,
         },
-        disputeReason: item.disputeReason || item.reason || item.category || "Expert Behavior",
+        disputeReason,
         riskLevel,
         dateOpened,
         status,
-        assignedAdmin: item.assignedAdmin || "Unassigned",
-        assignedAdminId: item.assignedAdminId,
+        assignedAdminName,
+        assignedAdminId,
       };
     });
 
-    return { disputeList: mapped, totalCount: total };
-  }, [data]);
+    return { disputeList: mapped, totalCount: total, totalPages: pages };
+  }, [data, pageSize]);
 
-  const totalPages = Math.max(1, Math.ceil(totalCount / pageSize));
+  useEffect(() => {
+    if (totalPages && page > totalPages) {
+      setPage(1);
+    }
+  }, [totalPages, page]);
 
   const handleSelectAll = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.checked) {
@@ -326,7 +377,7 @@ export function DisputesTable() {
       cell: (item) => (
         <Link
           href={`/dashboard/disputes/${item.id}`}
-          className="text-[#103D5C] text-sm font-semibold hover:underline text-nowrap"
+          className="text-[#103D5C] text-sm font-semibold hover:underline text-nowrap cursor-pointer"
         >
           {item.ticketId}
         </Link>
@@ -336,14 +387,19 @@ export function DisputesTable() {
       key: "jobId",
       header: "Job ID",
       className: "w-28 min-w-[100px]",
-      cell: (item) => (
-        <Link
-          href={`/dashboard/jobs/${item.id}`}
-          className="text-[#103D5C] text-sm font-normal underline hover:text-[#0a273b] text-nowrap"
-        >
-          {item.jobId}
-        </Link>
-      ),
+      cell: (item) =>
+        item.rawJobId ? (
+          <Link
+            href={`/dashboard/jobs/${item.rawJobId}`}
+            className="text-[#103D5C] text-sm font-normal underline hover:text-[#0a273b] text-nowrap cursor-pointer"
+          >
+            {item.jobId}
+          </Link>
+        ) : (
+          <span className="text-[#5A5A5A] text-sm font-normal text-nowrap">
+            {item.jobId}
+          </span>
+        ),
     },
     {
       key: "service",
@@ -440,11 +496,11 @@ export function DisputesTable() {
       cell: (item) => (
         <div className="relative">
           <select
-            defaultValue={item.assignedAdminId || ""}
+            value={item.assignedAdminId || ""}
             onChange={(e) => handleAdminChange(item.id, e.target.value)}
-            className="w-full appearance-none rounded-lg border border-slate-200 bg-white py-1.5 pl-3 pr-8 text-xs font-medium text-slate-700 outline-none focus:border-slate-400"
+            className="w-full appearance-none rounded-lg border border-slate-200 bg-white py-1.5 pl-3 pr-8 text-xs font-medium text-slate-700 outline-none focus:border-slate-400 cursor-pointer"
           >
-            <option value="">{item.assignedAdmin || "Select Admin"}</option>
+            <option value="">{item.assignedAdminName || "Select Admin"}</option>
             {adminsList &&
               adminsList.map((admin) => (
                 <option key={admin.id} value={admin.id}>
@@ -575,7 +631,7 @@ export function DisputesTable() {
           </p>
         </div>
       ) : (
-        <div className="relative border-x border-b border-[#E8E8E8] rounded-b-xl overflow-hidden bg-white">
+        <div className="relative">
           {isFetching && (
             <div className="absolute top-2 right-4 z-10 flex items-center gap-1.5 px-2 py-1 bg-white/90 backdrop-blur rounded shadow-sm border text-[11px] text-slate-600">
               <Loader2 className="h-3 w-3 animate-spin text-[#103D5C]" />
@@ -590,6 +646,7 @@ export function DisputesTable() {
             pageSizeOptions={[10, 20, 50, 100]}
             currentPage={page}
             totalPages={totalPages}
+            totalItems={totalCount}
             onPageChange={(newPage) => setPage(newPage)}
             onPageSizeChange={(newSize) => {
               setPageSize(newSize);

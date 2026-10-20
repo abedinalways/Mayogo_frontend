@@ -114,10 +114,10 @@ export default function DisputeHeader({
                         src={
                           msg.avatar ||
                           `https://placehold.co/40x40?text=${encodeURIComponent(
-                            msg.senderName.charAt(0)
+                            (msg.senderName || "User").charAt(0)
                           )}`
                         }
-                        alt={msg.senderName}
+                        alt={msg.senderName || "User"}
                         className="size-10 rounded-full border border-amber-400 shrink-0 object-cover"
                       />
                     )}
@@ -129,11 +129,11 @@ export default function DisputeHeader({
                         }`}
                       >
                         <span className="text-xs font-medium text-slate-800">
-                          {msg.senderName}
+                          {msg.senderName || "User"}
                         </span>
                         <span className="size-1 rounded-full bg-slate-400" />
                         <span className="text-xs font-normal text-slate-500">
-                          {msg.senderRole}
+                          {msg.senderRole || "Member"}
                         </span>
                       </div>
 
@@ -161,10 +161,10 @@ export default function DisputeHeader({
                         src={
                           msg.avatar ||
                           `https://placehold.co/40x40?text=${encodeURIComponent(
-                            msg.senderName.charAt(0)
+                            (msg.senderName || "User").charAt(0)
                           )}`
                         }
-                        alt={msg.senderName}
+                        alt={msg.senderName || "User"}
                         className="size-10 rounded-full border border-amber-400 shrink-0 object-cover"
                       />
                     )}
