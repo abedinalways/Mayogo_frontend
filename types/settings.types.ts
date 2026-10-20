@@ -102,3 +102,24 @@ export interface UpdatePlanDto {
   sortOrder?: number;
 }
 
+export interface EscrowSettings {
+  id?: string;
+  escrowReleaseDays: number;
+  minWithdrawalAmount: number;
+  withdrawalProcessingDays: number;
+  refundProcessingDays: number;
+  escrowHoldDuration?: number | string;
+  createdAt?: string;
+  updatedAt?: string;
+  [key: string]: any;
+}
+
+export interface UpdateEscrowDto {
+  escrowReleaseDays?: number;
+  minWithdrawalAmount?: number;
+  withdrawalProcessingDays?: number;
+  refundProcessingDays?: number;
+  [key: string]: any;
+}
+
+

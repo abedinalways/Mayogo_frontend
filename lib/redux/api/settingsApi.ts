@@ -8,6 +8,8 @@ import {
   GetPlansQueryParams,
   CreatePlanDto,
   UpdatePlanDto,
+  EscrowSettings,
+  UpdateEscrowDto,
 } from "@/types/settings.types";
 
 export const settingsApi = baseApi.injectEndpoints({
@@ -209,6 +211,59 @@ export const settingsApi = baseApi.injectEndpoints({
         { type: "Settings", id: `PLAN_${id}` },
       ],
     }),
+
+    // ── Payment & Escrow Settings ───────────────────────────────────────
+    getEscrowSettings: builder.query<EscrowSettings, void>({
+      query: () => ({
+        url: "/admin/settings/payment-escrow",
+        method: "GET",
+      }),
+      transformResponse: (
+        response: ApiResponse<EscrowSettings> | EscrowSettings
+      ) => {
+        if (response && "data" in response && response.data) {
+          return response.data;
+        }
+        return response as EscrowSettings;
+      },
+      providesTags: [{ type: "Settings", id: "ESCROW" }],
+    }),
+
+    updateEscrowSettings: builder.mutation<EscrowSettings, UpdateEscrowDto>({
+      query: (body) => ({
+        url: "/admin/settings/payment-escrow",
+        method: "PATCH",
+        body,
+      }),
+      transformResponse: (
+        response: ApiResponse<EscrowSettings> | EscrowSettings
+      ) => {
+        if (response && "data" in response && response.data) {
+          return response.data;
+        }
+        return response as EscrowSettings;
+      },
+      invalidatesTags: [{ type: "Settings", id: "ESCROW" }],
+    }),
+
+    resetEscrowSettings: builder.mutation<
+      { success: boolean; message?: string },
+      void
+    >({
+      query: () => ({
+        url: "/admin/settings/payment-escrow/reset",
+        method: "POST",
+      }),
+      transformResponse: (
+        response: ApiResponse<any> | { success: boolean; message?: string }
+      ) => {
+        if (response && "data" in response && response.data) {
+          return response.data;
+        }
+        return response as { success: boolean; message?: string };
+      },
+      invalidatesTags: [{ type: "Settings", id: "ESCROW" }],
+    }),
   }),
 });
 
@@ -223,4 +278,8 @@ export const {
   useUpdatePlanMutation,
   useDeletePlanMutation,
   useTogglePlanStatusMutation,
+  useGetEscrowSettingsQuery,
+  useUpdateEscrowSettingsMutation,
+  useResetEscrowSettingsMutation,
 } = settingsApi;
+

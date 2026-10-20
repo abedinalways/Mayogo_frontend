@@ -52,6 +52,12 @@ export function SettingsContainer() {
           detail: { section: "general" },
         })
       );
+    } else if (activeSection === "payment-escrow") {
+      window.dispatchEvent(
+        new CustomEvent("SETTINGS_SAVE_REQUEST", {
+          detail: { section: "payment-escrow" },
+        })
+      );
     } else {
       setIsSaving(true);
       setTimeout(() => {
@@ -96,7 +102,9 @@ export function SettingsContainer() {
               <GeneralSettings onSavingChange={setIsSaving} />
             )}
             {activeSection === "plan-pricing" && <PlanPricingSettings />}
-            {activeSection === "payment-escrow" && <PaymentEscrowSettings />}
+            {activeSection === "payment-escrow" && (
+              <PaymentEscrowSettings onSavingChange={setIsSaving} />
+            )}
             {activeSection === "security" && <SecuritySettings />}
             {activeSection === "system" && <SystemSettings />}
           </div>
