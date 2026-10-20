@@ -70,6 +70,12 @@ export function SettingsContainer() {
           detail: { section: "notifications-expert" },
         })
       );
+    } else if (activeSection === "security") {
+      window.dispatchEvent(
+        new CustomEvent("SETTINGS_SAVE_REQUEST", {
+          detail: { section: "security" },
+        })
+      );
     } else {
       setIsSaving(true);
       setTimeout(() => {
@@ -117,7 +123,9 @@ export function SettingsContainer() {
             {activeSection === "payment-escrow" && (
               <PaymentEscrowSettings onSavingChange={setIsSaving} />
             )}
-            {activeSection === "security" && <SecuritySettings />}
+            {activeSection === "security" && (
+              <SecuritySettings onSavingChange={setIsSaving} />
+            )}
             {activeSection === "system" && <SystemSettings />}
           </div>
         </div>

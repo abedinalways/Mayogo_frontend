@@ -15,6 +15,14 @@ import {
   UpdateNotificationDto,
   ToggleAllNotificationsDto,
   NotificationCategoryItem,
+  SecuritySettingsData,
+  UpdateSecurityDto,
+  IpRestrictionItem,
+  CreateIpRestrictionDto,
+  UpdateIpRestrictionDto,
+  GetIpRestrictionsParams,
+  ActiveSessionItem,
+  ChangePasswordDto,
 } from "@/types/settings.types";
 
 export const settingsApi = baseApi.injectEndpoints({
@@ -384,6 +392,232 @@ export const settingsApi = baseApi.injectEndpoints({
         { type: "Settings", id: "NOTIFICATIONS_EXPERT" },
       ],
     }),
+
+    // ── Security Settings ────────────────────────────────────────────────
+    getSecuritySettings: builder.query<SecuritySettingsData, void>({
+      query: () => ({
+        url: "/admin/settings/security",
+        method: "GET",
+      }),
+      transformResponse: (
+        response: ApiResponse<SecuritySettingsData> | SecuritySettingsData
+      ) => {
+        if (response && "data" in response && response.data !== undefined) {
+          return response.data;
+        }
+        return response as SecuritySettingsData;
+      },
+      providesTags: [{ type: "Settings", id: "SECURITY" }],
+    }),
+
+    updateSecuritySettings: builder.mutation<
+      SecuritySettingsData,
+      UpdateSecurityDto
+    >({
+      query: (body) => ({
+        url: "/admin/settings/security",
+        method: "PATCH",
+        body,
+      }),
+      transformResponse: (
+        response: ApiResponse<SecuritySettingsData> | SecuritySettingsData
+      ) => {
+        if (response && "data" in response && response.data !== undefined) {
+          return response.data;
+        }
+        return response as SecuritySettingsData;
+      },
+      invalidatesTags: [{ type: "Settings", id: "SECURITY" }],
+    }),
+
+    // ── IP Restrictions ─────────────────────────────────────────────────
+    getIpRestrictions: builder.query<
+      IpRestrictionItem[],
+      GetIpRestrictionsParams | void
+    >({
+      query: (params) => {
+        const queryParams: Record<string, any> = {};
+        if (params?.limit !== undefined) queryParams.limit = params.limit;
+        if (params?.offset !== undefined) queryParams.offset = params.offset;
+        if (params?.status && params.status !== "ALL") {
+          queryParams.status = params.status;
+        }
+        return {
+          url: "/admin/settings/security/ip-restrictions",
+          method: "GET",
+          params: queryParams,
+        };
+      },
+      transformResponse: (response: ApiResponse<any> | any) => {
+        const raw =
+          response && "data" in response && response.data !== undefined
+            ? response.data
+            : response;
+        if (Array.isArray(raw)) return raw;
+        if (raw && typeof raw === "object") {
+          if (Array.isArray(raw.items)) return raw.items;
+          if (Array.isArray(raw.restrictions)) return raw.restrictions;
+          if (Array.isArray(raw.data)) return raw.data;
+        }
+        return [];
+      },
+      providesTags: [{ type: "Settings", id: "IP_RESTRICTIONS" }],
+    }),
+
+    createIpRestriction: builder.mutation<
+      IpRestrictionItem,
+      CreateIpRestrictionDto
+    >({
+      query: (body) => ({
+        url: "/admin/settings/security/ip-restrictions",
+        method: "POST",
+        body,
+      }),
+      transformResponse: (
+        response: ApiResponse<IpRestrictionItem> | IpRestrictionItem
+      ) => {
+        if (response && "data" in response && response.data !== undefined) {
+          return response.data;
+        }
+        return response as IpRestrictionItem;
+      },
+      invalidatesTags: [{ type: "Settings", id: "IP_RESTRICTIONS" }],
+    }),
+
+    updateIpRestriction: builder.mutation<
+      IpRestrictionItem,
+      { id: string; data: UpdateIpRestrictionDto }
+    >({
+      query: ({ id, data }) => ({
+        url: `/admin/settings/security/ip-restrictions/${id}`,
+        method: "PATCH",
+        body: data,
+      }),
+      transformResponse: (
+        response: ApiResponse<IpRestrictionItem> | IpRestrictionItem
+      ) => {
+        if (response && "data" in response && response.data !== undefined) {
+          return response.data;
+        }
+        return response as IpRestrictionItem;
+      },
+      invalidatesTags: [{ type: "Settings", id: "IP_RESTRICTIONS" }],
+    }),
+
+    toggleIpRestriction: builder.mutation<IpRestrictionItem, string>({
+      query: (id) => ({
+        url: `/admin/settings/security/ip-restrictions/${id}/toggle`,
+        method: "PATCH",
+      }),
+      transformResponse: (
+        response: ApiResponse<IpRestrictionItem> | IpRestrictionItem
+      ) => {
+        if (response && "data" in response && response.data !== undefined) {
+          return response.data;
+        }
+        return response as IpRestrictionItem;
+      },
+      invalidatesTags: [{ type: "Settings", id: "IP_RESTRICTIONS" }],
+    }),
+
+    deleteIpRestriction: builder.mutation<
+      { success: boolean; message?: string },
+      string
+    >({
+      query: (id) => ({
+        url: `/admin/settings/security/ip-restrictions/${id}`,
+        method: "DELETE",
+      }),
+      transformResponse: (
+        response: ApiResponse<any> | { success: boolean; message?: string }
+      ) => {
+        if (response && "data" in response && response.data !== undefined) {
+          return response.data;
+        }
+        return response as { success: boolean; message?: string };
+      },
+      invalidatesTags: [{ type: "Settings", id: "IP_RESTRICTIONS" }],
+    }),
+
+    // ── Active Sessions ─────────────────────────────────────────────────
+    getActiveSessions: builder.query<ActiveSessionItem[], void>({
+      query: () => ({
+        url: "/admin/settings/security/sessions",
+        method: "GET",
+      }),
+      transformResponse: (response: ApiResponse<any> | any) => {
+        const raw =
+          response && "data" in response && response.data !== undefined
+            ? response.data
+            : response;
+        if (Array.isArray(raw)) return raw;
+        if (raw && typeof raw === "object") {
+          if (Array.isArray(raw.sessions)) return raw.sessions;
+          if (Array.isArray(raw.items)) return raw.items;
+          if (Array.isArray(raw.data)) return raw.data;
+        }
+        return [];
+      },
+      providesTags: [{ type: "Settings", id: "SESSIONS" }],
+    }),
+
+    endSession: builder.mutation<
+      { success: boolean; message?: string },
+      string
+    >({
+      query: (sessionId) => ({
+        url: `/admin/settings/security/sessions/${sessionId}`,
+        method: "DELETE",
+      }),
+      transformResponse: (
+        response: ApiResponse<any> | { success: boolean; message?: string }
+      ) => {
+        if (response && "data" in response && response.data !== undefined) {
+          return response.data;
+        }
+        return response as { success: boolean; message?: string };
+      },
+      invalidatesTags: [{ type: "Settings", id: "SESSIONS" }],
+    }),
+
+    endAllSessions: builder.mutation<
+      { success: boolean; message?: string },
+      void
+    >({
+      query: () => ({
+        url: "/admin/settings/security/sessions/end-all",
+        method: "POST",
+      }),
+      transformResponse: (
+        response: ApiResponse<any> | { success: boolean; message?: string }
+      ) => {
+        if (response && "data" in response && response.data !== undefined) {
+          return response.data;
+        }
+        return response as { success: boolean; message?: string };
+      },
+      invalidatesTags: [{ type: "Settings", id: "SESSIONS" }],
+    }),
+
+    // ── Change Password ─────────────────────────────────────────────────
+    changePassword: builder.mutation<
+      { success: boolean; message?: string },
+      ChangePasswordDto
+    >({
+      query: (body) => ({
+        url: "/auth/change-password",
+        method: "POST",
+        body,
+      }),
+      transformResponse: (
+        response: ApiResponse<any> | { success: boolean; message?: string }
+      ) => {
+        if (response && "data" in response && response.data !== undefined) {
+          return response.data;
+        }
+        return response as { success: boolean; message?: string };
+      },
+    }),
   }),
 });
 
@@ -407,5 +641,16 @@ export const {
   useUpdateNotificationMutation,
   useToggleAllNotificationsMutation,
   useResetNotificationsMutation,
+  useGetSecuritySettingsQuery,
+  useUpdateSecuritySettingsMutation,
+  useGetIpRestrictionsQuery,
+  useCreateIpRestrictionMutation,
+  useUpdateIpRestrictionMutation,
+  useToggleIpRestrictionMutation,
+  useDeleteIpRestrictionMutation,
+  useGetActiveSessionsQuery,
+  useEndSessionMutation,
+  useEndAllSessionsMutation,
+  useChangePasswordMutation,
 } = settingsApi;
 

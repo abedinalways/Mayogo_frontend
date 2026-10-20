@@ -161,5 +161,75 @@ export interface NotificationCategoryItem {
   [key: string]: any;
 }
 
+export interface SecuritySettingsData {
+  id?: string;
+  twoFactorEnabled: boolean;
+  sessionTimeoutHours: number;
+  warnBeforeLogout: boolean;
+  warningMinutes: number;
+  ipRestrictionEnabled: boolean;
+  createdAt?: string;
+  updatedAt?: string;
+  [key: string]: any;
+}
 
+export interface UpdateSecurityDto {
+  twoFactorEnabled?: boolean;
+  sessionTimeoutHours?: number;
+  warnBeforeLogout?: boolean;
+  warningMinutes?: number;
+  ipRestrictionEnabled?: boolean;
+  [key: string]: any;
+}
 
+export interface IpRestrictionItem {
+  id: string;
+  ipAddress?: string;
+  ip?: string;
+  label?: string;
+  status: "ACTIVE" | "DISABLED" | "Active" | "Disabled" | string;
+  addedBy?: string;
+  createdAt?: string;
+  updatedAt?: string;
+  date?: string;
+  [key: string]: any;
+}
+
+export interface CreateIpRestrictionDto {
+  ipAddress: string;
+  label?: string;
+}
+
+export interface UpdateIpRestrictionDto {
+  ipAddress?: string;
+  label?: string;
+  status?: "ACTIVE" | "DISABLED" | string;
+}
+
+export interface GetIpRestrictionsParams {
+  limit?: number;
+  offset?: number;
+  status?: "ALL" | "ACTIVE" | "DISABLED" | string;
+}
+
+export interface ActiveSessionItem {
+  id: string;
+  sessionId?: string;
+  device?: string;
+  deviceName?: string;
+  browser?: string;
+  os?: string;
+  location?: string;
+  ip?: string;
+  ipAddress?: string;
+  lastActive?: string;
+  createdAt?: string;
+  isCurrent?: boolean;
+  [key: string]: any;
+}
+
+export interface ChangePasswordDto {
+  currentPassword: string;
+  newPassword: string;
+  confirmPassword: string;
+}
