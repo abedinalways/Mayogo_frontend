@@ -130,7 +130,15 @@ export function RevenueTrend({ timeframe: parentTimeframe }: RevenueTrendProps) 
       const rev = Number(item.revenue || 0);
       const comm = Number(item.commission || 0);
       return {
-        month: String(item.month || ""),
+        month: String(
+          item.month ||
+            item.name ||
+            item.label ||
+            item.day ||
+            item.date ||
+            item.period ||
+            ""
+        ),
         revenue: rev,
         commission: comm,
         formattedRevenue:
