@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useMemo } from "react";
 import { ChevronDown, RotateCw } from "lucide-react";
 import {
   LineChart,
@@ -11,6 +11,8 @@ import {
   Tooltip,
   ResponsiveContainer,
 } from "recharts";
+import { useGetUserGrowthQuery } from "@/lib/redux/api/analyticsApi";
+import { AnalyticsTimeframe } from "@/types/analytics.types";
 
 interface UserGrowthData {
   month: string;
@@ -18,7 +20,7 @@ interface UserGrowthData {
   experts: number;
 }
 
-const data: UserGrowthData[] = [
+const DEFAULT_DATA: UserGrowthData[] = [
   { month: "Jan", clients: 650, experts: 100 },
   { month: "Feb", clients: 1100, experts: 400 },
   { month: "Mar", clients: 500, experts: 1950 },
@@ -33,27 +35,39 @@ const data: UserGrowthData[] = [
   { month: "Dec", clients: 500, experts: 950 },
 ];
 
+const TIME_RANGE_MAP: Record<string, AnalyticsTimeframe> = {
+  "Last 7 days": "last_7_days",
+  "Last 30 days": "last_30_days",
+  "Last 90 days": "last_90_days",
+  "Last 12 months": "last_12_months",
+};
+
 const TIME_RANGES = ["Last 7 days", "Last 30 days", "Last 90 days", "Last 12 months"];
 
-const CustomTooltip = ({ active, payload, label }: any) => {
+interface TooltipEntry {
+  dataKey?: string;
+  value?: number;
+}
+
+interface CustomTooltipProps {
+  active?: boolean;
+  payload?: TooltipEntry[];
+  label?: string;
+}
+
+const CustomTooltip = ({ active, payload, label }: CustomTooltipProps) => {
   if (active && payload && payload.length) {
     let clientsVal = 0;
     let expertsVal = 0;
 
-    payload.forEach((entry: any) => {
-      if (entry.dataKey === "clients") clientsVal = entry.value;
-      if (entry.dataKey === "experts") expertsVal = entry.value;
+    payload.forEach((entry) => {
+      if (entry.dataKey === "clients") clientsVal = entry.value || 0;
+      if (entry.dataKey === "experts") expertsVal = entry.value || 0;
     });
-
-    const fullMonthNames: Record<string, string> = {
-      Jan: "Jan", Feb: "Feb", Mar: "Mar", Apr: "Apr",
-      May: "May", Jun: "Jun", Jul: "Jul", Aug: "Aug",
-      Sep: "Sep", Oct: "Oct", Nov: "Nov", Dec: "Dec"
-    };
 
     return (
       <div className="rounded-xl border border-slate-100 bg-white p-3.5 shadow-xl font-['Manrope'] min-w-[150px]">
-        <p className="text-xs font-semibold text-slate-800 mb-2">{fullMonthNames[label] || label}</p>
+        <p className="text-xs font-semibold text-slate-800 mb-2">{label}</p>
         <div className="flex items-center justify-between gap-4 text-xs mb-1.5">
           <span className="text-slate-500">Clients</span>
           <span className="font-bold text-[#0e3a5b]">{clientsVal}</span>
@@ -68,9 +82,61 @@ const CustomTooltip = ({ active, payload, label }: any) => {
   return null;
 };
 
-export function UserGrowth() {
+interface UserGrowthProps {
+  timeframe?: AnalyticsTimeframe;
+}
+
+export function UserGrowth({ timeframe: parentTimeframe }: UserGrowthProps) {
   const [timeRange, setTimeRange] = useState("Last 12 months");
   const [dropdownOpen, setDropdownOpen] = useState(false);
+
+  React.useEffect(() => {
+    if (parentTimeframe) {
+      const matched = Object.keys(TIME_RANGE_MAP).find(
+        (key) => TIME_RANGE_MAP[key] === parentTimeframe
+      );
+      if (matched) {
+        setTimeRange(matched);
+      }
+    }
+  }, [parentTimeframe]);
+
+  const activeTimeframe = TIME_RANGE_MAP[timeRange] || parentTimeframe || "last_12_months";
+
+  const {
+    data: apiResponse,
+    isFetching,
+    refetch,
+  } = useGetUserGrowthQuery({ timeframe: activeTimeframe });
+
+  const chartData = useMemo<UserGrowthData[]>(() => {
+    const rawList = Array.isArray(apiResponse)
+      ? apiResponse
+      : apiResponse?.growth || apiResponse?.trend || apiResponse?.items || apiResponse?.data || [];
+
+    if (!rawList || rawList.length === 0) {
+      return DEFAULT_DATA;
+    }
+
+    return rawList.map((item) => ({
+      month: String(item.month || ""),
+      clients: Number(item.clients || 0),
+      experts: Number(item.experts || 0),
+    }));
+  }, [apiResponse]);
+
+  const maxVal = useMemo(() => {
+    const highest = Math.max(
+      ...chartData.map((d) => Math.max(d.clients, d.experts)),
+      1000
+    );
+    return Math.ceil(highest / 900) * 900;
+  }, [chartData]);
+
+  const ticks = useMemo(() => {
+    const step = maxVal / 4;
+    return [0, step, step * 2, step * 3, maxVal];
+  }, [maxVal]);
 
   return (
     <div className="card-container">
@@ -119,10 +185,12 @@ export function UserGrowth() {
           {/* Refresh Button */}
           <button
             type="button"
+            onClick={() => refetch()}
             className="flex h-8 w-8 items-center justify-center rounded-lg border border-slate-200 bg-white text-amber-500 hover:bg-slate-50 transition-colors cursor-pointer"
             aria-label="Refresh data"
+            title="Refresh User Growth"
           >
-            <RotateCw className="h-3.5 w-3.5 text-amber-500" />
+            <RotateCw className={`h-3.5 w-3.5 text-amber-500 ${isFetching ? "animate-spin" : ""}`} />
           </button>
         </div>
       </div>
@@ -131,7 +199,7 @@ export function UserGrowth() {
       <div className="mt-6 h-[280px] w-full">
         <ResponsiveContainer width="100%" height="100%">
           <LineChart
-            data={data}
+            data={chartData}
             margin={{ top: 10, right: 10, left: -15, bottom: 0 }}
           >
             <CartesianGrid
@@ -143,8 +211,8 @@ export function UserGrowth() {
               axisLine={false}
               tickLine={false}
               tick={{ fill: "#8a9bab", fontSize: 12 }}
-              domain={[0, 3600]}
-              ticks={[0, 900, 1800, 2700, 3600]}
+              domain={[0, maxVal]}
+              ticks={ticks}
             />
             <XAxis
               dataKey="month"

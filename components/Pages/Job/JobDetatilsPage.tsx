@@ -53,7 +53,7 @@ export default function JobDetatilsPage() {
       <div className="flex flex-col gap-5">
         <JobHeader job={job} />
         <JobDetails job={job} />
-        <JobCompletionEvidence />
+        <JobCompletionEvidence job={job} />
       </div>
 
       <RightSide job={job} />

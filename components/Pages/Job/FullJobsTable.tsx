@@ -81,50 +81,107 @@ export function FullJobsTable() {
     offset,
   });
 
-  const { jobList, totalCount } = useMemo(() => {
-    if (!data) return { jobList: [], totalCount: 0 };
+  const { jobList, totalCount, totalPages } = useMemo(() => {
+    if (!data) return { jobList: [], totalCount: 0, totalPages: 1 };
 
     let items: AdminJobItem[] = [];
     let total = 0;
+    let pages = 1;
 
     if (Array.isArray(data.data)) {
       items = data.data;
-      total = data.data.length;
+      total = data.meta?.total ?? data.data.length;
+      pages = data.meta?.totalPages ?? Math.max(1, Math.ceil(total / pageSize));
     } else if (data.data) {
-      items = data.data.jobs || data.data.data || data.data.items || [];
-      total = data.data.total ?? items.length;
+      items =
+        (data.data as any).jobs ||
+        (data.data as any).data ||
+        (data.data as any).items ||
+        [];
+      total = (data.data as any).total ?? data.meta?.total ?? items.length;
+      pages = data.meta?.totalPages ?? Math.max(1, Math.ceil(total / pageSize));
     }
 
     const mapped: FullJobRecord[] = items.map((j, index) => {
-      const rawStatus = (j.status || "PENDING").toUpperCase();
+      // 1. Status mapping
+      const rawStatus = String(j.status || "PENDING").toUpperCase();
       let status: StatusType = "Pending";
       if (rawStatus === "COMPLETED") status = "Completed";
       else if (rawStatus === "IN_PROGRESS") status = "In Progress";
       else if (rawStatus === "CANCELLED") status = "Cancelled";
       else if (rawStatus === "DISPUTED") status = "Disputed";
       else if (rawStatus === "ACCEPTED" || rawStatus === "QUOTE_ACCEPTED") status = "Accepted";
+      else if (
+        rawStatus === "WAITING_FOR_CLIENT_CONFIRM" ||
+        rawStatus === "WAITING_FOR_CLIENT"
+      )
+        status = "Under Review";
+      else if (rawStatus === "REJECTED") status = "Rejected";
 
-      const rawPayment = (j.paymentStatus || j.payment || "PENDING").toUpperCase();
+      // 2. Safe Payment Status mapping (Handles object, string, or missing)
+      let rawPayment = "PENDING";
+      if (typeof j.payment === "object" && j.payment !== null) {
+        rawPayment = String((j.payment as any).status || "PENDING").toUpperCase();
+      } else if (typeof j.paymentStatus === "string") {
+        rawPayment = j.paymentStatus.toUpperCase();
+      } else if (typeof j.payment === "string") {
+        rawPayment = j.payment.toUpperCase();
+      }
+
       let payment: StatusType = "Pending";
-      if (rawPayment === "PAID") payment = "Paid";
+      if (rawPayment === "PAID" || rawPayment === "COMPLETED") payment = "Paid";
       else if (rawPayment === "FAILED") payment = "Failed";
       else if (rawPayment === "REFUNDED") payment = "Refunded";
 
-      const clientName = j.client?.fullName || j.client?.name || "Client Name";
+      // 3. Client & Expert names and avatars
+      const clientName = j.client?.fullName || j.client?.name || "Client User";
       const expertName = j.expert?.fullName || j.expert?.name || "Unassigned";
 
-      const amountVal = j.amount ?? j.quote ?? j.totalAmount ?? 0;
-      const amountNum = typeof amountVal === "number" ? amountVal : parseFloat(String(amountVal || 0));
+      const clientAvatar =
+        j.client?.avatarUrl ||
+        j.client?.avatar ||
+        `https://placehold.co/80x80?text=${encodeURIComponent(clientName.charAt(0))}`;
 
+      const expertAvatar =
+        j.expert?.avatarUrl ||
+        j.expert?.avatar ||
+        `https://placehold.co/80x80?text=${encodeURIComponent(expertName.charAt(0))}`;
+
+      // 4. Safe Amount extraction
+      const rawPaymentAmount =
+        typeof j.payment === "object" && j.payment !== null ? (j.payment as any).amount : undefined;
+      const amountVal =
+        rawPaymentAmount ??
+        j.latestQuote?.amount ??
+        j.amount ??
+        j.quote ??
+        j.totalAmount ??
+        0;
+      const amountNum =
+        typeof amountVal === "number"
+          ? amountVal
+          : parseFloat(String(amountVal || 0)) || 0;
+
+      // 5. Safe Location extraction
       let locationText = "N/A";
       if (typeof j.location === "object" && j.location !== null) {
-        locationText = j.location.city || j.location.address || "N/A";
-      } else if (typeof j.location === "string") {
+        const parts = [j.location.city, j.location.country].filter(Boolean);
+        locationText =
+          parts.length > 0
+            ? parts.join(", ")
+            : j.location.addressLine1 || j.location.address || "N/A";
+      } else if (typeof j.location === "string" && j.location.trim()) {
         locationText = j.location;
       }
 
+      // 6. Safe Date extraction
       let dateText = "N/A";
-      const rawDate = j.date || j.appointment?.date || j.createdAt;
+      const rawDate =
+        j.appointment?.scheduledAt ||
+        j.appointment?.date ||
+        j.submittedAt ||
+        j.createdAt ||
+        j.date;
       if (rawDate) {
         try {
           dateText = new Intl.DateTimeFormat("en-GB", {
@@ -133,33 +190,42 @@ export function FullJobsTable() {
             year: "numeric",
           }).format(new Date(rawDate));
         } catch {
-          dateText = rawDate;
+          dateText = String(rawDate);
         }
       }
 
+      // 7. Service & Category
+      const serviceName = j.service?.name || j.title || "Standard Service";
+      const categoryName = j.category?.name || j.service?.category || "General";
+      const serviceImage =
+        j.thumbnailUrl ||
+        j.service?.image ||
+        "https://images.unsplash.com/photo-1621905251189-08b45d6a269e?w=100&auto=format&fit=crop&q=80";
+
+      // 8. Service Type
+      const serviceType =
+        j.serviceType ||
+        (j.appointment?.estimatedDuration
+          ? j.appointment.estimatedDuration.replace(/_/g, " ")
+          : "In-Person");
+
       return {
         id: j.id,
-        jobId: j.jobId || j.requestNumber || `#JB${String(index + 1).padStart(3, "0")}`,
+        jobId: j.requestNumber || j.jobId || `#JB${String(index + 1).padStart(3, "0")}`,
         service: {
-          name: j.service?.name || "Standard Service",
-          category: j.service?.category || "General",
-          image:
-            j.service?.image ||
-            "https://images.unsplash.com/photo-1621905251189-08b45d6a269e?w=100&auto=format&fit=crop&q=80",
+          name: serviceName,
+          category: categoryName,
+          image: serviceImage,
         },
         client: {
           name: clientName,
-          avatar:
-            j.client?.avatar ||
-            `https://placehold.co/80x80?text=${encodeURIComponent(clientName.charAt(0))}`,
+          avatar: clientAvatar,
         },
         expert: {
           name: expertName,
-          avatar:
-            j.expert?.avatar ||
-            `https://placehold.co/80x80?text=${encodeURIComponent(expertName.charAt(0))}`,
+          avatar: expertAvatar,
         },
-        serviceType: j.serviceType || "In-Person",
+        serviceType,
         payment,
         amount: `$${amountNum.toLocaleString()}`,
         location: locationText,
@@ -168,10 +234,14 @@ export function FullJobsTable() {
       };
     });
 
-    return { jobList: mapped, totalCount: total };
-  }, [data]);
+    return { jobList: mapped, totalCount: total, totalPages: pages };
+  }, [data, pageSize]);
 
-  const totalPages = Math.max(1, Math.ceil(totalCount / pageSize));
+  useEffect(() => {
+    if (totalPages && page > totalPages) {
+      setPage(1);
+    }
+  }, [totalPages, page]);
 
   const handleSelectAll = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.checked) {
@@ -444,6 +514,7 @@ export function FullJobsTable() {
             pageSizeOptions={[10, 20, 50, 100]}
             currentPage={page}
             totalPages={totalPages}
+            totalItems={totalCount}
             onPageChange={(newPage) => setPage(newPage)}
             onPageSizeChange={(newSize) => {
               setPageSize(newSize);

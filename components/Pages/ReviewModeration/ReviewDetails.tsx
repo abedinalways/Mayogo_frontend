@@ -2,7 +2,7 @@
 
 import React from "react";
 import Image from "next/image";
-import { X, Star, Eye, EyeOff } from "lucide-react";
+import { X, Star, Eye, EyeOff, Loader2 } from "lucide-react";
 import CustomButton from "@/components/shared/CustomButton";
 
 export interface ReviewDetailsProps {
@@ -19,7 +19,8 @@ export interface ReviewDetailsProps {
   expertName?: string;
   expertRole?: string;
   expertAvatar?: string;
-  status?: "Visible" | "Hidden";
+  status?: "Visible" | "Hidden" | string;
+  isLoading?: boolean;
   onClose?: () => void;
   onToggleStatus?: () => void;
 }
@@ -39,10 +40,11 @@ export function ReviewDetails({
   expertRole = "Expert",
   expertAvatar = "https://placehold.co/30x30",
   status = "Hidden",
+  isLoading = false,
   onClose,
   onToggleStatus,
 }: ReviewDetailsProps) {
-  const isHidden = status === "Hidden";
+  const isHidden = status?.toLowerCase() === "hidden";
 
   return (
     <div className="w-full inline-flex flex-col justify-center items-center gap-6">
@@ -59,7 +61,7 @@ export function ReviewDetails({
         <button
           type="button"
           onClick={onClose}
-          className="text-slate-400 hover:text-slate-600 transition-colors p-1 rounded-md"
+          className="text-slate-400 hover:text-slate-600 transition-colors p-1 rounded-md cursor-pointer"
         >
           <X className="h-5 w-5" />
         </button>
@@ -70,7 +72,7 @@ export function ReviewDetails({
         {/* Service Card */}
         <div className="self-stretch p-3 bg-white rounded-lg outline outline-1 outline-offset-[-1px] outline-slate-200 inline-flex justify-start items-center gap-3">
           <Image
-            src={serviceImage}
+            src={serviceImage || "https://placehold.co/44x44"}
             alt={serviceTitle}
             width={44}
             height={44}
@@ -94,7 +96,7 @@ export function ReviewDetails({
             <div className="self-stretch inline-flex justify-between items-start">
               <div className="flex justify-center items-center gap-2">
                 <Image
-                  src={clientAvatar}
+                  src={clientAvatar || "https://placehold.co/40x40"}
                   alt={clientName}
                   width={40}
                   height={40}
@@ -132,7 +134,7 @@ export function ReviewDetails({
             </div>
 
             {/* Comment Body */}
-            <p className="self-stretch text-sm font-normal text-slate-600 leading-6">
+            <p className="self-stretch text-sm font-normal text-slate-600 leading-6 whitespace-pre-wrap">
               {comment}
             </p>
           </div>
@@ -141,7 +143,7 @@ export function ReviewDetails({
           <div className="self-stretch inline-flex justify-between items-center">
             <div className="flex justify-center items-center gap-2">
               <Image
-                src={expertAvatar}
+                src={expertAvatar || "https://placehold.co/30x30"}
                 alt={expertName}
                 width={30}
                 height={30}
@@ -186,6 +188,7 @@ export function ReviewDetails({
           size="md"
           className="flex-1"
           onClick={onClose}
+          disabled={isLoading}
         >
           Cancel
         </CustomButton>
@@ -195,19 +198,26 @@ export function ReviewDetails({
           size="md"
           className="flex-1"
           onClick={onToggleStatus}
+          disabled={isLoading}
           leadingIcon={
-            isHidden ? (
+            isLoading ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : isHidden ? (
               <Eye className="h-4 w-4" />
             ) : (
               <EyeOff className="h-4 w-4" />
             )
           }
         >
-          {isHidden ? "Make it Visible" : "Hide Review"}
+          {isLoading
+            ? "Updating..."
+            : isHidden
+            ? "Make it Visible"
+            : "Hide Review"}
         </CustomButton>
       </div>
     </div>
   );
 }
 
-    export default ReviewDetails ;
+export default ReviewDetails;

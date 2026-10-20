@@ -3,6 +3,7 @@
 import React from "react";
 import { RotateCw, Loader2 } from "lucide-react";
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from "recharts";
+import { useGetTopCategoriesQuery } from "@/lib/redux/api/dashboardApi";
 import { useGetCategoriesQuery } from "@/lib/redux/api/categoryApi";
 import { CategoryItem } from "@/types/category.types";
 
@@ -14,7 +15,14 @@ interface CategoryData {
   color: string;
 }
 
-const PALETTE = ["#0a8a43", "#0075ff", "#ec448a", "#8b52f5", "#f2ad1b", "#06b6d4"];
+const PALETTE = [
+  "#0a8a43",
+  "#0075ff",
+  "#ec448a",
+  "#8b52f5",
+  "#f2ad1b",
+  "#06b6d4",
+];
 
 const defaultCategories: CategoryData[] = [
   { name: "Home Services", value: 28, jobs: 124, revenue: "$5,400", color: "#0a8a43" },
@@ -54,35 +62,76 @@ const CustomTooltip = ({ active, payload }: CustomTooltipProps) => {
 };
 
 export function TopCategoriesCard() {
-  const { data: categoriesResponse, isLoading, isFetching, refetch } =
-    useGetCategoriesQuery();
+  const {
+    data: dashboardCategories,
+    isLoading: isDashLoading,
+    isFetching: isDashFetching,
+    refetch: refetchDash,
+  } = useGetTopCategoriesQuery();
 
-  const rawCategories: CategoryItem[] = Array.isArray(categoriesResponse)
-    ? categoriesResponse
-    : [];
+  const {
+    data: fallbackCategoriesResponse,
+    isLoading: isFallbackLoading,
+    refetch: refetchFallback,
+  } = useGetCategoriesQuery(undefined, {
+    skip: Boolean(dashboardCategories && dashboardCategories.length > 0),
+  });
+
+  const isLoading = isDashLoading && isFallbackLoading;
+  const isFetching = isDashFetching;
+
+  const handleRefresh = () => {
+    refetchDash();
+    refetchFallback();
+  };
 
   let chartData: CategoryData[] = defaultCategories;
 
-  if (rawCategories.length > 0) {
-    const totalJobsSum = rawCategories.reduce(
-      (acc, cat) =>
-        acc +
-        (cat.jobsCount || cat._count?.jobs || cat.servicesCount || 1),
-      0
-    );
+  if (Array.isArray(dashboardCategories) && dashboardCategories.length > 0) {
+    chartData = dashboardCategories.slice(0, 5).map((cat, idx) => {
+      const jobsCount = cat.jobs ?? cat.jobsCount ?? cat.totalJobs ?? 0;
+      const rawRevenue = cat.revenue ?? cat.totalRevenue ?? (jobsCount * 45);
+      const formattedRev =
+        typeof rawRevenue === "number"
+          ? `$${rawRevenue.toLocaleString()}`
+          : String(rawRevenue).startsWith("$")
+          ? rawRevenue
+          : `$${rawRevenue}`;
 
-    chartData = rawCategories.slice(0, 5).map((cat, idx) => {
-      const jobsCount =
-        cat.jobsCount || cat._count?.jobs || cat.servicesCount || 1;
-      const pct = Math.round((jobsCount / (totalJobsSum || 1)) * 100);
       return {
         name: cat.name,
-        value: pct || 20,
-        jobs: jobsCount,
-        revenue: `$${(jobsCount * 45).toLocaleString()}`,
+        value: Number(cat.value ?? cat.percentage ?? cat.marketShare ?? 20),
+        jobs: Number(jobsCount),
+        revenue: formattedRev,
         color: cat.color || PALETTE[idx % PALETTE.length],
       };
     });
+  } else {
+    const rawCategories: CategoryItem[] = Array.isArray(fallbackCategoriesResponse)
+      ? fallbackCategoriesResponse
+      : [];
+
+    if (rawCategories.length > 0) {
+      const totalJobsSum = rawCategories.reduce(
+        (acc, cat) =>
+          acc +
+          (cat.jobsCount || cat._count?.jobs || cat.servicesCount || 1),
+        0
+      );
+
+      chartData = rawCategories.slice(0, 5).map((cat, idx) => {
+        const jobsCount =
+          cat.jobsCount || cat._count?.jobs || cat.servicesCount || 1;
+        const pct = Math.round((jobsCount / (totalJobsSum || 1)) * 100);
+        return {
+          name: cat.name,
+          value: pct || 20,
+          jobs: jobsCount,
+          revenue: `$${(jobsCount * 45).toLocaleString()}`,
+          color: cat.color || PALETTE[idx % PALETTE.length],
+        };
+      });
+    }
   }
 
   return (
@@ -91,7 +140,7 @@ export function TopCategoriesCard() {
         <h2 className="card-title">Top Categories</h2>
         <button
           type="button"
-          onClick={() => refetch()}
+          onClick={handleRefresh}
           disabled={isLoading || isFetching}
           className="flex h-8 w-8 items-center justify-center rounded-lg border border-slate-200 bg-white text-amber-500 hover:bg-slate-50 transition-colors disabled:opacity-50"
           aria-label="Refresh data"

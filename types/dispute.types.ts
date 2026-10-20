@@ -5,7 +5,8 @@ export type DisputeTab =
   | "AWAITING_CLIENT"
   | "AWAITING_EXPERT"
   | "RESOLVED"
-  | "REJECTED";
+  | "REJECTED"
+  | "CLOSED";
 
 export type DisputePriority = "LOW" | "MEDIUM" | "HIGH" | "URGENT";
 
@@ -27,14 +28,25 @@ export type DisputeSortBy =
   | "PRIORITY_HIGHEST"
   | "PRIORITY_LOWEST";
 
+export interface DisputeAdminInfo {
+  id: string;
+  fullName: string;
+  email?: string;
+  avatarUrl?: string | null;
+}
+
 export interface DisputeParty {
   id?: string;
   name?: string;
   fullName?: string;
-  email?: string;
+  email?: string | null;
+  phone?: string;
   avatar?: string;
-  avatarUrl?: string;
+  avatarUrl?: string | null;
   rating?: number | string;
+  location?: string;
+  professionalTitle?: string;
+  joinedAt?: string;
 }
 
 export interface DisputeService {
@@ -42,6 +54,81 @@ export interface DisputeService {
   name: string;
   category?: string;
   image?: string;
+  slug?: string;
+}
+
+export interface DisputeJobInfo {
+  id: string;
+  requestNumber?: string;
+  title?: string;
+  description?: string;
+  status?: string;
+  createdAt?: string;
+  updatedAt?: string;
+  category?: {
+    id: string;
+    name: string;
+    slug?: string;
+  };
+  service?: {
+    id: string;
+    name: string;
+    slug?: string;
+  };
+  location?: {
+    addressLine1?: string;
+    addressLine2?: string;
+    city?: string;
+    state?: string;
+    country?: string;
+  };
+  appointment?: {
+    scheduledAt?: string;
+    estimatedDuration?: string;
+    status?: string;
+  };
+  payment?: {
+    amount?: string | number;
+    status?: string;
+    paymentType?: string;
+  };
+  latestQuote?: {
+    amount?: string | number;
+    status?: string;
+  };
+  images?: Array<{
+    id: string;
+    fileUrl: string;
+    displayOrder?: number;
+  }>;
+  dynamicFields?: Array<{
+    fieldKey: string;
+    values: string[];
+  }>;
+}
+
+export interface DisputePaymentInfo {
+  id?: string;
+  amount?: string | number;
+  platformFee?: string | number;
+  totalAmount?: string | number;
+  status?: string;
+  paymentMethod?: string;
+  paymentType?: string;
+  transactionId?: string;
+  paidAt?: string;
+  escrowStatus?: string;
+  disputedAmount?: string | number;
+  milestones?: Array<{
+    id: string;
+    title: string;
+    description?: string;
+    amount: string | number;
+    order: number;
+    status: string;
+    releasedAt?: string | null;
+    completedAt?: string | null;
+  }>;
 }
 
 export interface DisputeEvidenceFile {
@@ -50,57 +137,94 @@ export interface DisputeEvidenceFile {
   size?: string;
   type?: "pdf" | "image" | string;
   url?: string;
+  fileUrl?: string;
+  fileName?: string;
   isDownloaded?: boolean;
 }
 
 export interface DisputeMessage {
   id: string;
-  senderName: string;
-  senderRole: "Client" | "Expert" | "Admin";
   senderId?: string;
+  senderType?: "CLIENT" | "EXPERT" | "ADMIN" | string;
+  senderName?: string;
+  senderRole?: "Client" | "Expert" | "Admin" | string;
   avatar?: string;
   text?: string;
   message?: string;
-  timestamp: string;
-  createdAt?: string;
+  timestamp?: string;
+  createdAt: string;
   isInternal?: boolean;
+  attachments?: Array<{
+    id: string;
+    fileUrl: string;
+    fileName?: string;
+  }>;
 }
 
 export interface DisputeTimelineEvent {
-  id: string;
-  title: string;
-  description: string;
+  id?: string | number;
+  type?: string;
+  title?: string;
+  description?: string;
+  message?: string;
   timeAgo?: string;
   date?: string;
-  status: "info" | "warning" | "success" | "error";
-  createdAt?: string;
+  status?: "info" | "warning" | "success" | "error";
+  createdAt: string;
+}
+
+export interface DisputeLastMessage {
+  message: string;
+  createdAt: string;
+  senderType: string;
+}
+
+export interface DisputeMetaPagination {
+  total: number;
+  limit: number;
+  offset: number;
+  currentPage: number;
+  totalPages: number;
+  hasNext: boolean;
 }
 
 export interface DisputeItem {
   id: string;
   ticketId?: string;
   ticketNumber?: string;
-  jobId?: string;
+  jobId?: string | null;
+  job?: DisputeJobInfo | null;
+  client?: DisputeParty | null;
+  expert?: DisputeParty | null;
+  category: DisputeCategory | string;
   subject?: string;
   description?: string;
+  priority: DisputePriority | string;
+  status: DisputeTab | string;
+  createdAt: string;
+  updatedAt?: string;
+  assignedAdmin?: DisputeAdminInfo | string | null;
+  assignedAdminId?: string;
+  lastMessage?: DisputeLastMessage | null;
+  messageCount?: number;
+  attachmentCount?: number;
   service?: DisputeService;
-  client?: DisputeParty;
-  expert?: DisputeParty;
   disputeReason?: string;
   reason?: string;
-  category?: DisputeCategory | string;
-  priority?: DisputePriority;
   riskLevel?: DisputePriority | string;
-  dateOpened?: string;
-  createdAt?: string;
-  status: DisputeTab | string;
-  assignedAdmin?: string;
-  assignedAdminId?: string;
   amount?: number | string;
   disputedAmount?: number | string;
+  dateOpened?: string;
 }
 
 export interface DisputeDetails extends DisputeItem {
+  resolvedAt?: string | null;
+  resolution?: string | null;
+  payment?: DisputePaymentInfo | null;
+  completion?: any;
+  messages?: DisputeMessage[];
+  events?: DisputeTimelineEvent[];
+  attachments?: any[];
   totalAmount?: number | string;
   agreedQuote?: number | string;
   paymentType?: string;
@@ -127,7 +251,6 @@ export interface DisputeDetails extends DisputeItem {
     beforePhotos?: string[];
     afterPhotos?: string[];
   };
-  messages?: DisputeMessage[];
   timeline?: DisputeTimelineEvent[];
   internalNotes?: Array<{
     id: string;
@@ -139,12 +262,12 @@ export interface DisputeDetails extends DisputeItem {
 
 export interface DisputeListParams {
   tab?: DisputeTab | string;
-  priority?: DisputePriority;
+  priority?: DisputePriority | string;
   category?: DisputeCategory | string;
   assignedAdminId?: string;
   jobId?: string;
   search?: string;
-  sortBy?: DisputeSortBy;
+  sortBy?: DisputeSortBy | string;
   limit?: number;
   offset?: number;
 }
@@ -170,6 +293,7 @@ export interface DisputeStatsResponseData {
   awaitingExpert?: number;
   resolved?: number;
   rejected?: number;
+  closed?: number;
   urgentPriority?: number;
   highPriority?: number;
 }

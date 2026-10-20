@@ -99,11 +99,11 @@ export default function DisputeDetailsPage({ disputeId }: DisputeDetailsPageProp
     : parseFloat(String(dispute.disputedAmount || 0)) || totalAmountNum;
 
   const timelineEvents: TimelineEvent[] = (dispute.timeline || []).map((ev, idx) => ({
-    id: ev.id || String(idx),
-    title: ev.title,
-    description: ev.description,
+    id: String(ev.id ?? idx),
+    title: ev.title || "Event",
+    description: ev.description || "",
     timeAgo: ev.timeAgo || ev.date || "Recently",
-    status: ev.status || "info",
+    status: (ev.status as "info" | "warning" | "success" | "error") || "info",
   }));
 
   const initialNotesList = (dispute.internalNotes || []).map((n) => ({
@@ -152,13 +152,47 @@ export default function DisputeDetailsPage({ disputeId }: DisputeDetailsPageProp
 
       {/* Overview Details Cards */}
       <DisputeJobDetails
-        jobId={dispute.jobId ? (dispute.jobId.startsWith("#") ? dispute.jobId : `#${dispute.jobId}`) : "#JB001"}
-        startDate={dispute.startDate || dispute.dateOpened || "Jul 27, 2026"}
-        reason={dispute.disputeReason || dispute.reason || "Quality Issues"}
-        paymentType={dispute.paymentType || "Milestone Based"}
-        escrowStatus={dispute.escrowStatus || "Partially Released"}
+        jobId={
+          dispute.job?.requestNumber ||
+          (dispute.jobId
+            ? dispute.jobId.startsWith("#")
+              ? dispute.jobId
+              : `#${dispute.jobId.slice(0, 8)}`
+            : "#JB001")
+        }
+        startDate={
+          dispute.job?.createdAt
+            ? new Intl.DateTimeFormat("en-GB", {
+                day: "numeric",
+                month: "short",
+                year: "numeric",
+              }).format(new Date(dispute.job.createdAt))
+            : dispute.startDate || dispute.dateOpened || "Jul 27, 2026"
+        }
+        reason={
+          dispute.disputeReason ||
+          dispute.reason ||
+          (dispute.category ? dispute.category.replace(/_/g, " ") : "Quality Issues")
+        }
+        paymentType={
+          dispute.payment?.paymentType ||
+          dispute.job?.payment?.paymentType ||
+          dispute.paymentType ||
+          "Milestone Based"
+        }
+        escrowStatus={
+          dispute.payment?.escrowStatus ||
+          dispute.escrowStatus ||
+          "Partially Released"
+        }
         disputedAmount={`$${disputedAmountNum.toFixed(2)}`}
-        assignedAdmin={dispute.assignedAdmin || "Unassigned"}
+        assignedAdmin={
+          typeof dispute.assignedAdmin === "object" && dispute.assignedAdmin !== null
+            ? dispute.assignedAdmin.fullName || (dispute.assignedAdmin as any).name || "Assigned Admin"
+            : typeof dispute.assignedAdmin === "string" && dispute.assignedAdmin.trim()
+            ? dispute.assignedAdmin
+            : "Unassigned"
+        }
       />
 
       {/* Claims Comparison (Client claim vs Provider response) */}

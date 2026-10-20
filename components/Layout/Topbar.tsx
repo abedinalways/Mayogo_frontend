@@ -9,6 +9,8 @@ import { useAppSelector } from "@/lib/redux/hooks";
 import { selectCurrentUser, selectIsAuthenticated } from "@/lib/redux/features/auth/authSlice";
 import { useGetProfileQuery, useLogoutAdminMutation } from "@/lib/redux/api/authApi";
 
+import { GlobalSearch } from "./GlobalSearch";
+
 export function Topbar({
   isSidebarOpen,
   onMenuClick,
@@ -84,16 +86,7 @@ export function HeaderActions({
 
   return (
     <div className="flex items-center gap-3 font-['Manrope']">
-      <label className="relative hidden h-9 w-56 items-center rounded-lg border border-[#e4ebf1] bg-white px-3 py-2.5 shadow-sm transition-colors focus-within:border-slate-300 md:flex">
-        <span className="sr-only">Search</span>
-        <Search className="h-4 w-4 shrink-0 text-[#9aaab5]" />
-        <input
-          type="search"
-          placeholder="Type to search"
-          onChange={onSearchChange}
-          className="ml-2 w-full bg-transparent text-xs font-normal text-[#0f3453] placeholder:text-[#9aaab5] outline-none"
-        />
-      </label>
+      <GlobalSearch />
 
       <NotificationsDropdown onOpen={onNotificationClick} />
 

@@ -2,8 +2,10 @@
 
 import React from "react";
 import Link from "next/link";
-import { Star, Loader2 } from "lucide-react";
+import { Star } from "lucide-react";
+import { useGetTopExpertsQuery } from "@/lib/redux/api/dashboardApi";
 import { useGetExpertsQuery } from "@/lib/redux/api/expertApi";
+import { DashboardTopExpertItem } from "@/types/dashboard.types";
 import { Expert } from "@/types/expert.types";
 
 export interface Professional {
@@ -108,43 +110,98 @@ const fallbackProfessionals: Professional[] = [
 ];
 
 export default function TopExperts({ className = "" }: { className?: string }) {
-  const { data: expertsResponse, isLoading } = useGetExpertsQuery({
-    limit: 4,
-  });
+  const {
+    data: dashExperts,
+    isLoading: isDashLoading,
+  } = useGetTopExpertsQuery({ limit: 3 });
 
-  const rawExperts: Expert[] = Array.isArray(expertsResponse?.data)
-    ? expertsResponse.data
-    : (expertsResponse?.data as { experts?: Expert[]; data?: Expert[] })?.experts ||
-      (expertsResponse?.data as { experts?: Expert[]; data?: Expert[] })?.data ||
-      [];
+  const hasDashData = Array.isArray(dashExperts) && dashExperts.length > 0;
 
-  const professionals: Professional[] =
-    rawExperts.length > 0
-      ? rawExperts.map((exp) => {
-          const catName =
-            typeof exp.category === "object"
-              ? exp.category?.name
-              : exp.category || exp.businessName || "Certified Expert";
+  const {
+    data: fallbackExpertsResponse,
+    isLoading: isFallbackLoading,
+  } = useGetExpertsQuery(
+    { limit: 4 },
+    { skip: hasDashData }
+  );
 
-          const totalJobs = exp.totalJobs || exp.jobs || 0;
-          const earningsVal =
-            typeof exp.earnings === "number"
-              ? `$${exp.earnings.toLocaleString()}`
-              : exp.earnings || `$${(totalJobs * 85).toLocaleString()}`;
+  const isLoading = isDashLoading && isFallbackLoading;
 
-          return {
-            id: exp.id,
-            name: exp.fullName,
-            profession: catName,
-            avatar:
-              exp.avatar ||
-              "https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?w=150&auto=format&fit=crop&q=80",
-            completedJobs: totalJobs,
-            totalEarned: earningsVal,
-            rating: 4.9,
-          };
-        })
-      : fallbackProfessionals;
+  let professionals: Professional[] = [];
+
+  if (hasDashData) {
+    professionals = dashExperts.map((exp: DashboardTopExpertItem) => {
+      const name = exp.fullName || exp.name || "Professional";
+      const profession =
+        exp.professionalTitle ||
+        (typeof exp.category === "object" ? exp.category?.name : exp.category) ||
+        exp.profession ||
+        "Certified Expert";
+
+      const completedJobs =
+        exp.jobsCompleted ?? exp.completedJobs ?? exp.totalJobs ?? 0;
+
+      const rawEarned =
+        exp.totalEarnings ?? exp.totalEarned ?? exp.earnings ?? (completedJobs * 85);
+
+      const totalEarned =
+        typeof rawEarned === "number"
+          ? `$${rawEarned.toLocaleString()}`
+          : String(rawEarned).startsWith("$")
+          ? rawEarned
+          : `$${rawEarned}`;
+
+      const rating = Number(exp.rating ?? exp.averageRating ?? 4.9);
+
+      return {
+        id: exp.id,
+        name,
+        profession,
+        avatar:
+          exp.avatarUrl ||
+          exp.avatar ||
+          "https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?w=150&auto=format&fit=crop&q=80",
+        completedJobs,
+        totalEarned,
+        rating,
+      };
+    });
+  } else {
+    const rawExperts: Expert[] = Array.isArray(fallbackExpertsResponse?.data)
+      ? fallbackExpertsResponse.data
+      : (fallbackExpertsResponse?.data as { experts?: Expert[]; data?: Expert[] })?.experts ||
+        (fallbackExpertsResponse?.data as { experts?: Expert[]; data?: Expert[] })?.data ||
+        [];
+
+    if (rawExperts.length > 0) {
+      professionals = rawExperts.map((exp) => {
+        const catName =
+          typeof exp.category === "object"
+            ? exp.category?.name
+            : exp.category || exp.businessName || "Certified Expert";
+
+        const totalJobs = exp.totalJobs || exp.jobs || 0;
+        const earningsVal =
+          typeof exp.earnings === "number"
+            ? `$${exp.earnings.toLocaleString()}`
+            : exp.earnings || `$${(totalJobs * 85).toLocaleString()}`;
+
+        return {
+          id: exp.id,
+          name: exp.fullName,
+          profession: catName,
+          avatar:
+            exp.avatar ||
+            "https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?w=150&auto=format&fit=crop&q=80",
+          completedJobs: totalJobs,
+          totalEarned: earningsVal,
+          rating: 4.9,
+        };
+      });
+    } else {
+      professionals = fallbackProfessionals;
+    }
+  }
 
   return (
     <div className={`w-full overflow-hidden card-container ${className}`}>

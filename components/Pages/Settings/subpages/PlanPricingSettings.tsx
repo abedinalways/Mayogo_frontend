@@ -4,8 +4,14 @@ import React, { useState } from "react";
 import { Zap, Crown, CheckCircle2, XCircle } from "lucide-react";
 import LeftsideTitleSubtitle from "../LeftsideTitleSubtitle";
 import EditPlanModal, { PlanData } from "./EditPlanModal";
+import {
+  useGetPlansQuery,
+  useUpdatePlanMutation,
+} from "@/lib/redux/api/settingsApi";
+import { useToast } from "@/components/shared/Toast/ToastContext";
+import { PlanItem } from "@/types/settings.types";
 
-// ─── Initial Data ─────────────────────────────────────────────────────────────
+// ─── Initial Fallback Data ───────────────────────────────────────────────────
 const INITIAL_PLANS: PlanData[] = [
   {
     id: "free",
@@ -53,7 +59,10 @@ function PlanCard({
   plan: PlanData;
   onEdit: (plan: PlanData) => void;
 }) {
-  const isPremium = plan.id === "premium";
+  const isPremium =
+    plan.name.toLowerCase().includes("premium") ||
+    plan.name.toLowerCase().includes("pro") ||
+    plan.id === "premium";
   const Icon = isPremium ? Crown : Zap;
 
   return (
@@ -142,13 +151,124 @@ function PlanCard({
   );
 }
 
+// ─── Plan Card Skeleton ───────────────────────────────────────────────────────
+function PlanCardSkeleton() {
+  return (
+    <div className="w-full p-4 bg-white rounded-2xl border border-[#E4EBF1] flex flex-col justify-center items-center gap-4 animate-pulse">
+      <div className="self-stretch pb-4 border-b border-[#F1F5F9] flex justify-between items-center gap-5">
+        <div className="flex items-center gap-3">
+          <div className="h-10 w-10 rounded-full bg-slate-200" />
+          <div className="h-6 w-24 rounded bg-slate-200" />
+        </div>
+        <div className="h-10 w-24 rounded-lg bg-slate-100" />
+      </div>
+      <div className="self-stretch pb-4 border-b border-[#F1F5F9] flex flex-col gap-2">
+        <div className="h-7 w-36 rounded bg-slate-200" />
+        <div className="h-4 w-28 rounded bg-slate-100" />
+        <div className="h-3.5 w-64 rounded bg-slate-100" />
+      </div>
+      <div className="self-stretch flex flex-col gap-2 pt-2">
+        <div className="h-4 w-20 rounded bg-slate-200" />
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+          <div className="h-4 w-44 rounded bg-slate-100" />
+          <div className="h-4 w-40 rounded bg-slate-100" />
+          <div className="h-4 w-48 rounded bg-slate-100" />
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ─── Main Component ───────────────────────────────────────────────────────────
 export function PlanPricingSettings() {
-  const [plans, setPlans] = useState<PlanData[]>(INITIAL_PLANS);
+  const { data: plansData, isLoading } = useGetPlansQuery();
+  const [updatePlan, { isLoading: isUpdating }] = useUpdatePlanMutation();
+  const { success, error } = useToast();
+
   const [editingPlan, setEditingPlan] = useState<PlanData | null>(null);
 
-  const handleSavePlan = (updated: PlanData) => {
-    setPlans((prev) => prev.map((p) => (p.id === updated.id ? updated : p)));
+  const displayPlans: PlanData[] = React.useMemo(() => {
+    if (Array.isArray(plansData) && plansData.length > 0) {
+      return plansData.map((item: PlanItem) => {
+        const subs =
+          item.subscribersCount ??
+          item.subscriberCount ??
+          item.subscribers ??
+          item._count?.subscriptions ??
+          item._count?.subscribers ??
+          "0";
+
+        const cycle =
+          item.interval === "YEARLY"
+            ? "Yearly"
+            : item.interval === "QUARTERLY"
+            ? "Quarterly"
+            : "Monthly";
+
+        return {
+          id: item.id,
+          name: item.name || "Plan",
+          monthlyFee: String(item.price ?? 0),
+          subscribers: String(subs),
+          bestFor:
+            item.description ||
+            item.badgeText ||
+            "Active experts on the platform",
+          billingCycle: cycle,
+          features: Array.isArray(item.includedFeatures)
+            ? item.includedFeatures
+            : [],
+          limitations: Array.isArray(item.limitations) ? item.limitations : [],
+          status: item.status,
+          isPopular: item.isPopular,
+        };
+      });
+    }
+    return INITIAL_PLANS;
+  }, [plansData]);
+
+  const handleSavePlan = async (updated: PlanData) => {
+    const isBackendPlan =
+      Array.isArray(plansData) &&
+      plansData.some((p: PlanItem) => p.id === updated.id);
+
+    try {
+      if (isBackendPlan) {
+        await updatePlan({
+          id: updated.id,
+          name: updated.name.trim(),
+          description: updated.bestFor.trim(),
+          price: parseFloat(updated.monthlyFee) || 0,
+          interval:
+            updated.billingCycle?.toUpperCase() === "YEARLY"
+              ? "YEARLY"
+              : "MONTHLY",
+          includedFeatures: updated.features,
+          limitations: updated.limitations,
+        }).unwrap();
+      } else {
+        // If updating a fallback plan or demo plan, also attempt update by id or name
+        await updatePlan({
+          id: updated.id,
+          name: updated.name.trim(),
+          description: updated.bestFor.trim(),
+          price: parseFloat(updated.monthlyFee) || 0,
+          interval:
+            updated.billingCycle?.toUpperCase() === "YEARLY"
+              ? "YEARLY"
+              : "MONTHLY",
+          includedFeatures: updated.features,
+          limitations: updated.limitations,
+        }).unwrap();
+      }
+
+      success("Subscription plan updated successfully");
+      setEditingPlan(null);
+    } catch (err: any) {
+      const msg =
+        err?.data?.message || err?.message || "Failed to update plan";
+      error(msg);
+    }
   };
 
   return (
@@ -162,9 +282,16 @@ export function PlanPricingSettings() {
 
       {/* Right Column */}
       <div className="w-full lg:w-[840px] flex flex-col justify-center items-center gap-5">
-        {plans.map((plan) => (
-          <PlanCard key={plan.id} plan={plan} onEdit={setEditingPlan} />
-        ))}
+        {isLoading && !plansData ? (
+          <>
+            <PlanCardSkeleton />
+            <PlanCardSkeleton />
+          </>
+        ) : (
+          displayPlans.map((plan) => (
+            <PlanCard key={plan.id} plan={plan} onEdit={setEditingPlan} />
+          ))
+        )}
       </div>
 
       {/* Edit Plan Modal */}
@@ -173,6 +300,7 @@ export function PlanPricingSettings() {
         onClose={() => setEditingPlan(null)}
         plan={editingPlan}
         onSave={handleSavePlan}
+        isSaving={isUpdating}
       />
     </div>
   );

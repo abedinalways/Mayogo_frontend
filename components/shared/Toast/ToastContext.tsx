@@ -50,9 +50,16 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
       const id = `${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
       const newToast: ToastMessage = { id, type, title, message, duration };
 
-      setToasts((prev) => [...prev, newToast]);
+      let isDuplicate = false;
+      setToasts((prev) => {
+        if (prev.some((t) => t.message === message && t.type === type)) {
+          isDuplicate = true;
+          return prev;
+        }
+        return [...prev, newToast];
+      });
 
-      if (duration > 0) {
+      if (!isDuplicate && duration > 0) {
         setTimeout(() => {
           dismissToast(id);
         }, duration);
