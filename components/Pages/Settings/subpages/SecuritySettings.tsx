@@ -58,13 +58,16 @@ function AmberToggle({
 const INACTIVITY_OPTIONS = [
   { label: "1 hour", value: "1h" },
   { label: "2 hours", value: "2h" },
+  { label: "3 hours", value: "3h" },
   { label: "4 hours", value: "4h" },
+  { label: "6 hours", value: "6h" },
   { label: "8 hours", value: "8h" },
   { label: "12 hours", value: "12h" },
   { label: "24 hours", value: "24h" },
 ];
 
 const WARNING_TIME_OPTIONS = [
+  { label: "1 minute before logout", value: "1m" },
   { label: "2 minutes before logout", value: "2m" },
   { label: "5 minutes before logout", value: "5m" },
   { label: "10 minutes before logout", value: "10m" },
@@ -81,6 +84,27 @@ const parseMinutes = (val: string | number): number => {
   if (typeof val === "number") return val;
   const num = parseInt(String(val).replace(/[^0-9]/g, ""), 10);
   return isNaN(num) || num < 1 ? 5 : Math.min(15, num);
+};
+
+const getErrorMessage = (err: any, fallback: string): string => {
+  if (!err) return fallback;
+  const data = err?.data || err?.response?.data;
+  if (data) {
+    if (typeof data.message === "string") return data.message;
+    if (Array.isArray(data.message) && data.message.length > 0) {
+      return data.message
+        .map((m: any) => (typeof m === "string" ? m : m?.message || JSON.stringify(m)))
+        .join(", ");
+    }
+    if (Array.isArray(data.details) && data.details.length > 0) {
+      return data.details
+        .map((d: any) => (typeof d === "string" ? d : d?.message || JSON.stringify(d)))
+        .join(", ");
+    }
+    if (typeof data.error === "string") return data.error;
+  }
+  if (typeof err.message === "string") return err.message;
+  return fallback;
 };
 
 export function SecuritySettings({ onSavingChange }: SecuritySettingsProps = {}) {
@@ -160,20 +184,13 @@ export function SecuritySettings({ onSavingChange }: SecuritySettingsProps = {})
           s.device ||
           s.deviceName ||
           (s.browser
-            ? `${s.browser} ${s.os ? `on ${s.os}` : ""}`
-            : "MacBook Pro - Chrome"),
-        location: s.location || "Jakarta, ID",
-        ip: s.ipAddress || s.ip || "114.120.0.0",
+            ? `${s.browser}${s.os ? ` on ${s.os}` : ""}`
+            : "Current Device"),
+        location: s.location || "Current Location",
+        ip: s.ipAddress || s.ip || "-",
       }));
     }
-    return [
-      {
-        id: "current",
-        device: "MacBook Pro - Chrome",
-        location: "Jakarta, ID",
-        ip: "114.120.0.0",
-      },
-    ];
+    return [];
   }, [sessionsData]);
 
   // Transform IP list
@@ -212,7 +229,7 @@ export function SecuritySettings({ onSavingChange }: SecuritySettingsProps = {})
     }
 
     if (newPassword === currentPassword) {
-      error("New password must be different from the current password");
+      error("New password must be different from current password");
       return;
     }
 
@@ -228,11 +245,7 @@ export function SecuritySettings({ onSavingChange }: SecuritySettingsProps = {})
       setNewPassword("");
       setConfirmPassword("");
     } catch (err: any) {
-      const msg =
-        err?.data?.message ||
-        err?.data?.details?.[0]?.message ||
-        err?.message ||
-        "Failed to change password";
+      const msg = getErrorMessage(err, "Failed to change password");
       error(msg);
     }
   };
@@ -249,11 +262,7 @@ export function SecuritySettings({ onSavingChange }: SecuritySettingsProps = {})
       );
     } catch (err: any) {
       setTwoFactorEnabled(!nextVal);
-      const msg =
-        err?.data?.message ||
-        err?.data?.details?.[0]?.message ||
-        err?.message ||
-        "Failed to update 2FA setting";
+      const msg = getErrorMessage(err, "Failed to update 2FA setting");
       error(msg);
     }
   };
@@ -269,11 +278,7 @@ export function SecuritySettings({ onSavingChange }: SecuritySettingsProps = {})
 
       success("Session timeout settings saved successfully");
     } catch (err: any) {
-      const msg =
-        err?.data?.message ||
-        err?.data?.details?.[0]?.message ||
-        err?.message ||
-        "Failed to save session timeout settings";
+      const msg = getErrorMessage(err, "Failed to save session timeout settings");
       error(msg);
     }
   };
@@ -285,11 +290,7 @@ export function SecuritySettings({ onSavingChange }: SecuritySettingsProps = {})
       await endSession(id).unwrap();
       success("Session ended successfully");
     } catch (err: any) {
-      const msg =
-        err?.data?.message ||
-        err?.data?.details?.[0]?.message ||
-        err?.message ||
-        "Failed to end session";
+      const msg = getErrorMessage(err, "Failed to end session");
       error(msg);
     } finally {
       setEndingSessionId(null);
@@ -308,11 +309,7 @@ export function SecuritySettings({ onSavingChange }: SecuritySettingsProps = {})
       );
     } catch (err: any) {
       setIpRestrictionEnabled(!nextVal);
-      const msg =
-        err?.data?.message ||
-        err?.data?.details?.[0]?.message ||
-        err?.message ||
-        "Failed to update IP restriction setting";
+      const msg = getErrorMessage(err, "Failed to update IP restriction setting");
       error(msg);
     }
   };
@@ -325,6 +322,12 @@ export function SecuritySettings({ onSavingChange }: SecuritySettingsProps = {})
       return;
     }
 
+    const ipRegex = /^[0-9a-fA-F:./]+$/;
+    if (!ipRegex.test(ip)) {
+      error("Invalid IP address format");
+      return;
+    }
+
     try {
       await createIpRestriction({
         ipAddress: ip,
@@ -334,11 +337,7 @@ export function SecuritySettings({ onSavingChange }: SecuritySettingsProps = {})
       success(`IP address ${ip} added to whitelist`);
       setNewIpAddress("");
     } catch (err: any) {
-      const msg =
-        err?.data?.message ||
-        err?.data?.details?.[0]?.message ||
-        err?.message ||
-        "Failed to add IP restriction";
+      const msg = getErrorMessage(err, "Failed to add IP restriction");
       error(msg);
     }
   };
@@ -350,11 +349,7 @@ export function SecuritySettings({ onSavingChange }: SecuritySettingsProps = {})
       await toggleIpRestriction(id).unwrap();
       success("IP restriction status updated");
     } catch (err: any) {
-      const msg =
-        err?.data?.message ||
-        err?.data?.details?.[0]?.message ||
-        err?.message ||
-        "Failed to toggle IP status";
+      const msg = getErrorMessage(err, "Failed to toggle IP status");
       error(msg);
     } finally {
       setTogglingIpId(null);
@@ -368,11 +363,7 @@ export function SecuritySettings({ onSavingChange }: SecuritySettingsProps = {})
       await deleteIpRestriction(id).unwrap();
       success("IP restriction deleted successfully");
     } catch (err: any) {
-      const msg =
-        err?.data?.message ||
-        err?.data?.details?.[0]?.message ||
-        err?.message ||
-        "Failed to delete IP restriction";
+      const msg = getErrorMessage(err, "Failed to delete IP restriction");
       error(msg);
     } finally {
       setDeletingIpId(null);
@@ -388,11 +379,7 @@ export function SecuritySettings({ onSavingChange }: SecuritySettingsProps = {})
 
       success("IP access settings saved successfully");
     } catch (err: any) {
-      const msg =
-        err?.data?.message ||
-        err?.data?.details?.[0]?.message ||
-        err?.message ||
-        "Failed to save IP access settings";
+      const msg = getErrorMessage(err, "Failed to save IP access settings");
       error(msg);
     }
   };
@@ -404,6 +391,37 @@ export function SecuritySettings({ onSavingChange }: SecuritySettingsProps = {})
       if (customEvent.detail?.section === "security") {
         onSavingChange?.(true);
         try {
+          if (newPassword.trim() || currentPassword.trim() || confirmPassword.trim()) {
+            if (!currentPassword.trim() || !newPassword.trim() || !confirmPassword.trim()) {
+              error("Please fill in all password fields");
+              onSavingChange?.(false);
+              return;
+            }
+            if (newPassword.length < 8) {
+              error("New password must be at least 8 characters long");
+              onSavingChange?.(false);
+              return;
+            }
+            if (newPassword !== confirmPassword) {
+              error("New password and confirm password do not match");
+              onSavingChange?.(false);
+              return;
+            }
+            if (newPassword === currentPassword) {
+              error("New password must be different from current password");
+              onSavingChange?.(false);
+              return;
+            }
+            await changePassword({
+              currentPassword,
+              newPassword,
+              confirmPassword,
+            }).unwrap();
+            setCurrentPassword("");
+            setNewPassword("");
+            setConfirmPassword("");
+          }
+
           await updateSecuritySettings({
             twoFactorEnabled,
             sessionTimeoutHours: parseHours(inactivityDuration),
@@ -414,11 +432,7 @@ export function SecuritySettings({ onSavingChange }: SecuritySettingsProps = {})
 
           success("All security settings saved successfully");
         } catch (err: any) {
-          const msg =
-            err?.data?.message ||
-            err?.data?.details?.[0]?.message ||
-            err?.message ||
-            "Failed to save security settings";
+          const msg = getErrorMessage(err, "Failed to save security settings");
           error(msg);
         } finally {
           onSavingChange?.(false);
@@ -433,6 +447,10 @@ export function SecuritySettings({ onSavingChange }: SecuritySettingsProps = {})
   }, [
     onSavingChange,
     updateSecuritySettings,
+    changePassword,
+    currentPassword,
+    newPassword,
+    confirmPassword,
     twoFactorEnabled,
     inactivityDuration,
     warnBeforeLogout,
@@ -674,7 +692,13 @@ export function SecuritySettings({ onSavingChange }: SecuritySettingsProps = {})
               </button>
             </div>
           ))}
-          {sessions.length === 0 && (
+          {isLoadingSessions && (
+            <div className="flex items-center gap-2 text-xs text-slate-400 py-2">
+              <Loader2 className="w-4 h-4 animate-spin text-[#103D5C]" />
+              Loading active sessions...
+            </div>
+          )}
+          {!isLoadingSessions && sessions.length === 0 && (
             <p className="text-xs text-slate-400 py-2">No active sessions found.</p>
           )}
         </div>
@@ -748,6 +772,7 @@ export function SecuritySettings({ onSavingChange }: SecuritySettingsProps = {})
         onToggleStatus={handleToggleIpStatus}
         deletingId={deletingIpId}
         togglingId={togglingIpId}
+        isLoading={isLoadingIps}
       />
 
       <div className="p-3.5 bg-[#F8FAFC] rounded-xl border border-[#E4EBF1] text-xs text-slate-600 leading-relaxed">

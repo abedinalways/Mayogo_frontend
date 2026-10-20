@@ -20,6 +20,7 @@ export interface IpRestrictionTableProps {
   onToggleStatus?: (id: string) => void;
   deletingId?: string | null;
   togglingId?: string | null;
+  isLoading?: boolean;
   className?: string;
 }
 
@@ -29,6 +30,7 @@ export function IpRestrictionTable({
   onToggleStatus,
   deletingId,
   togglingId,
+  isLoading = false,
   className = "",
 }: IpRestrictionTableProps) {
   const formatDate = (dateStr?: string) => {
@@ -134,7 +136,13 @@ export function IpRestrictionTable({
             </div>
           );
         })}
-        {ipList.length === 0 && (
+        {isLoading && (
+          <div className="p-4 flex items-center justify-center gap-2 text-xs text-slate-400">
+            <Loader2 className="w-4 h-4 animate-spin text-[#103D5C]" />
+            Loading IP restrictions...
+          </div>
+        )}
+        {!isLoading && ipList.length === 0 && (
           <div className="p-4 text-center text-xs text-slate-400">
             No whitelisted IP addresses added yet.
           </div>
