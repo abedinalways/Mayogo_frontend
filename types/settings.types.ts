@@ -105,10 +105,11 @@ export interface UpdatePlanDto {
 export interface EscrowSettings {
   id?: string;
   escrowReleaseDays: number;
+  escrowHoldDuration?: number;
+  escrowHoldDays?: number;
   minWithdrawalAmount: number;
   withdrawalProcessingDays: number;
   refundProcessingDays: number;
-  escrowHoldDuration?: number | string;
   createdAt?: string;
   updatedAt?: string;
   [key: string]: any;
@@ -116,6 +117,8 @@ export interface EscrowSettings {
 
 export interface UpdateEscrowDto {
   escrowReleaseDays?: number;
+  escrowHoldDuration?: number;
+  escrowHoldDays?: number;
   minWithdrawalAmount?: number;
   withdrawalProcessingDays?: number;
   refundProcessingDays?: number;

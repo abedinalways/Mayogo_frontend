@@ -59,8 +59,12 @@ export function PaymentEscrowSettings({
       if (escrowSettings.escrowReleaseDays !== undefined) {
         setAutoReleaseDuration(`${escrowSettings.escrowReleaseDays} Days`);
       }
-      if (escrowSettings.escrowHoldDuration !== undefined) {
-        const val = escrowSettings.escrowHoldDuration;
+      if (
+        escrowSettings.escrowHoldDuration !== undefined ||
+        escrowSettings.escrowHoldDays !== undefined
+      ) {
+        const val =
+          escrowSettings.escrowHoldDuration ?? escrowSettings.escrowHoldDays;
         setEscrowHoldDuration(
           typeof val === "number" ? `${val} Days` : String(val)
         );
@@ -96,12 +100,14 @@ export function PaymentEscrowSettings({
     isSubmittingRef.current = true;
     try {
       const releaseDays = parseDays(autoReleaseDuration, 7);
+      const holdDays = parseDays(escrowHoldDuration, 3);
       const minAmount = parseAmount(minWithdrawalAmount, 20);
       const withDays = parseDays(processingTime, 2);
       const refDays = parseDays(refundProcessingTime, 5);
 
       await updateEscrow({
         escrowReleaseDays: Math.min(30, Math.max(1, releaseDays)),
+        escrowHoldDuration: Math.min(30, Math.max(1, holdDays)),
         minWithdrawalAmount: Math.max(0, minAmount),
         withdrawalProcessingDays: Math.min(10, Math.max(1, withDays)),
         refundProcessingDays: Math.min(30, Math.max(1, refDays)),
@@ -144,13 +150,41 @@ export function PaymentEscrowSettings({
     if (isSaving) return;
     try {
       const res = await resetEscrow().unwrap();
-      setAutoReleaseDuration("7 Days");
-      setEscrowHoldDuration("3 Days");
-      setMinWithdrawalAmount("$20");
-      setProcessingTime("2 Business Days");
-      setRefundProcessingTime("5 Days");
+      const updatedData = (res as any)?.data || res;
+      if (updatedData?.escrowReleaseDays !== undefined) {
+        setAutoReleaseDuration(`${updatedData.escrowReleaseDays} Days`);
+      } else {
+        setAutoReleaseDuration("7 Days");
+      }
+      if (
+        updatedData?.escrowHoldDuration !== undefined ||
+        updatedData?.escrowHoldDays !== undefined
+      ) {
+        const hVal =
+          updatedData.escrowHoldDuration ?? updatedData.escrowHoldDays;
+        setEscrowHoldDuration(`${hVal} Days`);
+      } else {
+        setEscrowHoldDuration("3 Days");
+      }
+      if (updatedData?.minWithdrawalAmount !== undefined) {
+        setMinWithdrawalAmount(`$${updatedData.minWithdrawalAmount}`);
+      } else {
+        setMinWithdrawalAmount("$20");
+      }
+      if (updatedData?.withdrawalProcessingDays !== undefined) {
+        setProcessingTime(
+          `${updatedData.withdrawalProcessingDays} Business Days`
+        );
+      } else {
+        setProcessingTime("2 Business Days");
+      }
+      if (updatedData?.refundProcessingDays !== undefined) {
+        setRefundProcessingTime(`${updatedData.refundProcessingDays} Days`);
+      } else {
+        setRefundProcessingTime("5 Days");
+      }
       hasInitialized.current = false;
-      success(res?.message || "Escrow settings reset to default values");
+      success((res as any)?.message || "Escrow settings reset to default values");
     } catch (err: any) {
       const msg =
         err?.data?.message || err?.message || "Failed to reset escrow settings";
