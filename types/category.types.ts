@@ -99,7 +99,7 @@ export interface ServiceListResponseData {
 export interface CreateServicePayload {
   name: string;
   description?: string;
-  imageUrl?: string;
+  imageUrl?: string | File;
   commission: number;
   categoryId: string;
   isActive?: boolean;
@@ -109,7 +109,7 @@ export interface UpdateServicePayload {
   id: string;
   name?: string;
   description?: string;
-  imageUrl?: string;
+  imageUrl?: string | File;
   commission?: number;
   categoryId?: string;
   isActive?: boolean;

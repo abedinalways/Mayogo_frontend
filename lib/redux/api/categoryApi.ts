@@ -100,21 +100,34 @@ export const categoryApi = baseApi.injectEndpoints({
         const payload =
           "data" in response && response.data ? response.data : response;
 
+        const meta =
+          response && typeof response === "object" && "meta" in response
+            ? (
+                response as {
+                  meta?: {
+                    total?: number;
+                    limit?: number;
+                    offset?: number;
+                  };
+                }
+              ).meta
+            : undefined;
+
         if (Array.isArray(payload)) {
           return {
             services: payload,
-            total: payload.length,
-            limit: payload.length,
-            offset: 0,
+            total: meta?.total ?? payload.length,
+            limit: meta?.limit ?? payload.length,
+            offset: meta?.offset ?? 0,
           };
         }
 
         const obj = payload as ServiceListResponseData;
         return {
           services: obj.services || obj.data || obj.items || [],
-          total: obj.total ?? (obj.services?.length || 0),
-          limit: obj.limit || 20,
-          offset: obj.offset || 0,
+          total: meta?.total ?? obj.total ?? (obj.services?.length || 0),
+          limit: meta?.limit ?? obj.limit ?? 20,
+          offset: meta?.offset ?? obj.offset ?? 0,
         };
       },
       providesTags: (result) =>
@@ -129,26 +142,91 @@ export const categoryApi = baseApi.injectEndpoints({
           : [{ type: "Service", id: "LIST" }],
     }),
 
-    createService: builder.mutation<ApiResponse<ServiceItem>, CreateServicePayload>({
-      query: (body) => ({
-        url: "/admin/services",
-        method: "POST",
-        body,
-      }),
+    createService: builder.mutation<
+      ApiResponse<ServiceItem>,
+      CreateServicePayload | FormData
+    >({
+      query: (body) => {
+        if (body instanceof FormData) {
+          return {
+            url: "/admin/services",
+            method: "POST",
+            body,
+          };
+        }
+
+        if (body.imageUrl instanceof File) {
+          const formData = new FormData();
+          formData.append("name", body.name);
+          if (body.description) formData.append("description", body.description);
+          formData.append("categoryId", body.categoryId);
+          formData.append("commission", String(body.commission));
+          if (body.isActive !== undefined) {
+            formData.append("isActive", String(body.isActive));
+          }
+          formData.append("imageUrl", body.imageUrl);
+
+          return {
+            url: "/admin/services",
+            method: "POST",
+            body: formData,
+          };
+        }
+
+        return {
+          url: "/admin/services",
+          method: "POST",
+          body,
+        };
+      },
       invalidatesTags: [
         { type: "Service", id: "LIST" },
         { type: "Category", id: "LIST" },
       ],
     }),
 
-    updateService: builder.mutation<ApiResponse<ServiceItem>, UpdateServicePayload>({
-      query: ({ id, ...body }) => ({
-        url: `/admin/services/${id}`,
-        method: "PATCH",
-        body,
-      }),
-      invalidatesTags: (_result, _error, { id }) => [
-        { type: "Service", id },
+    updateService: builder.mutation<
+      ApiResponse<ServiceItem>,
+      UpdateServicePayload | { id: string; formData: FormData }
+    >({
+      query: (arg) => {
+        if ("formData" in arg && arg.formData instanceof FormData) {
+          return {
+            url: `/admin/services/${arg.id}`,
+            method: "PATCH",
+            body: arg.formData,
+          };
+        }
+
+        const { id, ...body } = arg as UpdateServicePayload;
+        if (body.imageUrl instanceof File) {
+          const formData = new FormData();
+          if (body.name) formData.append("name", body.name);
+          if (body.description) formData.append("description", body.description);
+          if (body.categoryId) formData.append("categoryId", body.categoryId);
+          if (body.commission !== undefined) {
+            formData.append("commission", String(body.commission));
+          }
+          if (body.isActive !== undefined) {
+            formData.append("isActive", String(body.isActive));
+          }
+          formData.append("imageUrl", body.imageUrl);
+
+          return {
+            url: `/admin/services/${id}`,
+            method: "PATCH",
+            body: formData,
+          };
+        }
+
+        return {
+          url: `/admin/services/${id}`,
+          method: "PATCH",
+          body,
+        };
+      },
+      invalidatesTags: (_result, _error, arg) => [
+        { type: "Service", id: "id" in arg ? arg.id : "LIST" },
         { type: "Service", id: "LIST" },
       ],
     }),
