@@ -1,9 +1,10 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import LeftsideTitleSubtitle from "../LeftsideTitleSubtitle";
 import {
   useGetNotificationsByTargetTypeQuery,
+  useGetNotificationCategoriesQuery,
   useUpdateNotificationMutation,
 } from "@/lib/redux/api/settingsApi";
 import { useToast } from "@/components/shared/Toast/ToastContext";
@@ -11,6 +12,7 @@ import { useToast } from "@/components/shared/Toast/ToastContext";
 interface NotificationSetting {
   id: string;
   categoryKey: string;
+  categoryTokens: string[];
   title: string;
   description: string;
   enabled: boolean;
@@ -24,6 +26,7 @@ const INITIAL_SETTINGS: NotificationSetting[] = [
   {
     id: "quotations",
     categoryKey: "QUOTATIONS",
+    categoryTokens: ["quotations", "quotation", "offers", "offer"],
     title: "Quotations & Offers",
     description:
       "Notify clients when experts send quotations, counter offers, or when a quotation requires attention before expiration.",
@@ -32,6 +35,7 @@ const INITIAL_SETTINGS: NotificationSetting[] = [
   {
     id: "job-updates",
     categoryKey: "JOB_UPDATES",
+    categoryTokens: ["job_updates", "job_update", "jobs", "job"],
     title: "Job Updates",
     description:
       "Notify clients about job requests, quotes, job progress, completion, and cancellations.",
@@ -40,6 +44,14 @@ const INITIAL_SETTINGS: NotificationSetting[] = [
   {
     id: "payments-refunds",
     categoryKey: "PAYMENTS_REFUNDS",
+    categoryTokens: [
+      "payments_refunds",
+      "payment_refund",
+      "payments",
+      "payment",
+      "refunds",
+      "refund",
+    ],
     title: "Payments & Refunds",
     description:
       "Notify clients about successful payments, failed transactions, and refund processing updates.",
@@ -48,6 +60,12 @@ const INITIAL_SETTINGS: NotificationSetting[] = [
   {
     id: "messages-comm",
     categoryKey: "MESSAGES_COMMUNICATION",
+    categoryTokens: [
+      "messages_communication",
+      "messages",
+      "message",
+      "communication",
+    ],
     title: "Messages & Communication",
     description:
       "Notify clients when experts send new messages or important conversation updates.",
@@ -56,6 +74,13 @@ const INITIAL_SETTINGS: NotificationSetting[] = [
   {
     id: "support-disputes",
     categoryKey: "SUPPORT_DISPUTES",
+    categoryTokens: [
+      "support_disputes",
+      "support_dispute",
+      "support",
+      "disputes",
+      "dispute",
+    ],
     title: "Support & Disputes",
     description:
       "Notify clients when support tickets or dispute cases receive updates, responses, or resolutions.",
@@ -64,6 +89,12 @@ const INITIAL_SETTINGS: NotificationSetting[] = [
   {
     id: "account-settings",
     categoryKey: "ACCOUNT_SETTINGS",
+    categoryTokens: [
+      "account_settings",
+      "account_setting",
+      "account",
+      "security",
+    ],
     title: "Account Settings",
     description:
       "Notify clients about important account-related activities and security updates.",
@@ -98,77 +129,169 @@ function AmberToggle({
 
 const normalize = (s: string) => s.toLowerCase().replace(/[^a-z0-9]/g, "");
 
+function findBestCategoryMatch(
+  itemId: string,
+  categoryTokens: string[],
+  availableCategories: string[]
+): string | null {
+  const normId = normalize(itemId);
+
+  // 1. Exact normalized equality with ID
+  const exact = availableCategories.find((c) => normalize(c) === normId);
+  if (exact) return exact;
+
+  // 2. Token match
+  for (const token of categoryTokens) {
+    const normToken = normalize(token);
+    const match = availableCategories.find((c) => {
+      const normC = normalize(c);
+      return (
+        normC === normToken ||
+        normC.includes(normToken) ||
+        normToken.includes(normC)
+      );
+    });
+    if (match) return match;
+  }
+
+  return null;
+}
+
 export function NotificationsClientSettings({
   onSavingChange,
 }: NotificationsClientSettingsProps = {}) {
   const { data: remoteData } = useGetNotificationsByTargetTypeQuery("CLIENT");
+  const { data: rawCategories } = useGetNotificationCategoriesQuery();
   const [updateNotification] = useUpdateNotificationMutation();
   const { success, error } = useToast();
 
   const [settings, setSettings] = useState<NotificationSetting[]>(INITIAL_SETTINGS);
   const [updatingId, setUpdatingId] = useState<string | null>(null);
 
-  // Sync with remote data when available
-  useEffect(() => {
-    if (!remoteData || !Array.isArray(remoteData) || remoteData.length === 0) return;
+  // Extract all available categories for CLIENT from categories query
+  const availableClientCategories = useMemo<string[]>(() => {
+    const categories: string[] = [];
 
+    if (Array.isArray(rawCategories)) {
+      rawCategories.forEach((item: any) => {
+        if (typeof item === "string") {
+          categories.push(item);
+        } else if (item && typeof item === "object") {
+          if (
+            !item.targetType ||
+            String(item.targetType).toUpperCase() === "CLIENT"
+          ) {
+            const cat = item.category || item.name || item.key;
+            if (cat) categories.push(String(cat));
+          }
+        }
+      });
+    } else if (rawCategories && typeof rawCategories === "object") {
+      const list =
+        (rawCategories as any).client ||
+        (rawCategories as any).CLIENT ||
+        (rawCategories as any).categories;
+      if (Array.isArray(list)) {
+        list.forEach((c: any) => {
+          if (typeof c === "string") categories.push(c);
+          else if (c?.category) categories.push(String(c.category));
+        });
+      }
+    }
+
+    // Also include any categories present in remoteData
+    if (Array.isArray(remoteData)) {
+      remoteData.forEach((r) => {
+        if (r.category && !categories.includes(r.category)) {
+          categories.push(r.category);
+        }
+      });
+    }
+
+    return Array.from(new Set(categories));
+  }, [rawCategories, remoteData]);
+
+  // Sync settings with remote data and valid categories
+  useEffect(() => {
     setSettings((prev) => {
       const updated = [...prev];
       const matchedRemoteIndices = new Set<number>();
 
       updated.forEach((item, idx) => {
-        const normId = normalize(item.id);
-        const normCat = normalize(item.categoryKey);
-        const normTitle = normalize(item.title);
-
-        const rIndex = remoteData.findIndex(
-          (r, i) =>
-            !matchedRemoteIndices.has(i) &&
-            (normalize(r.category || "") === normId ||
-              normalize(r.category || "") === normCat ||
-              normId.includes(normalize(r.category || "")) ||
-              normalize(r.category || "").includes(normId) ||
-              normalize(r.title || r.name || "") === normTitle)
+        // Find best match in available categories
+        const matchedCat = findBestCategoryMatch(
+          item.id,
+          item.categoryTokens,
+          availableClientCategories
         );
 
-        if (rIndex !== -1) {
-          matchedRemoteIndices.add(rIndex);
-          const rItem = remoteData[rIndex];
-          updated[idx] = {
-            ...item,
-            categoryKey: rItem.category || item.categoryKey,
-            enabled: typeof rItem.enabled === "boolean" ? rItem.enabled : item.enabled,
-            description: rItem.description || item.description,
-            title: rItem.title || rItem.name || item.title,
-          };
+        let finalCategory = matchedCat || item.categoryKey;
+        let finalEnabled = item.enabled;
+        let finalTitle = item.title;
+        let finalDescription = item.description;
+
+        // Check if remoteData has an item for this category or id
+        if (Array.isArray(remoteData) && remoteData.length > 0) {
+          const rIndex = remoteData.findIndex(
+            (r, i) =>
+              !matchedRemoteIndices.has(i) &&
+              (r.category === finalCategory ||
+                normalize(r.category || "") === normalize(item.id) ||
+                normalize(r.category || "") === normalize(item.categoryKey) ||
+                item.categoryTokens.some((t) =>
+                  normalize(r.category || "").includes(normalize(t))
+                ))
+          );
+
+          if (rIndex !== -1) {
+            matchedRemoteIndices.add(rIndex);
+            const rItem = remoteData[rIndex];
+            if (rItem.category) finalCategory = rItem.category;
+            if (typeof rItem.enabled === "boolean") finalEnabled = rItem.enabled;
+            const fetchedTitle = rItem.title || rItem.name;
+            if (fetchedTitle) finalTitle = fetchedTitle;
+            if (rItem.description) finalDescription = rItem.description;
+          }
         }
+
+        updated[idx] = {
+          ...item,
+          categoryKey: finalCategory,
+          enabled: finalEnabled,
+          title: finalTitle,
+          description: finalDescription,
+        };
       });
 
-      // Append any extra categories from backend not in initial list
-      remoteData.forEach((r, i) => {
-        if (!matchedRemoteIndices.has(i) && r.category) {
-          const rawCat = String(r.category);
-          const prettyTitle =
-            r.title ||
-            r.name ||
-            rawCat
-              .toLowerCase()
-              .replace(/_/g, " ")
-              .replace(/\b\w/g, (c) => c.toUpperCase());
-          updated.push({
-            id: rawCat.toLowerCase().replace(/_/g, "-"),
-            categoryKey: rawCat,
-            title: prettyTitle,
-            description:
-              r.description || `Control ${prettyTitle.toLowerCase()} notifications.`,
-            enabled: Boolean(r.enabled),
-          });
-        }
-      });
+      // Append any extra remote categories from backend not in initial list
+      if (Array.isArray(remoteData)) {
+        remoteData.forEach((r, i) => {
+          if (!matchedRemoteIndices.has(i) && r.category) {
+            const rawCat = String(r.category);
+            const prettyTitle =
+              r.title ||
+              r.name ||
+              rawCat
+                .toLowerCase()
+                .replace(/_/g, " ")
+                .replace(/\b\w/g, (c) => c.toUpperCase());
+            updated.push({
+              id: rawCat.toLowerCase().replace(/_/g, "-"),
+              categoryKey: rawCat,
+              categoryTokens: [rawCat.toLowerCase()],
+              title: prettyTitle,
+              description:
+                r.description ||
+                `Control ${prettyTitle.toLowerCase()} notifications.`,
+              enabled: Boolean(r.enabled),
+            });
+          }
+        });
+      }
 
       return updated;
     });
-  }, [remoteData]);
+  }, [remoteData, availableClientCategories]);
 
   const toggleSetting = async (id: string) => {
     const target = settings.find((s) => s.id === id);
@@ -202,6 +325,7 @@ export function NotificationsClientSettings({
         )
       );
       const msg =
+        err?.data?.details?.[0]?.message ||
         err?.data?.message ||
         err?.message ||
         "Failed to update notification setting";
