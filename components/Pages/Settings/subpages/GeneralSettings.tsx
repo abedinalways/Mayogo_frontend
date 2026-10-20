@@ -140,9 +140,16 @@ export function GeneralSettings({ onSavingChange }: GeneralSettingsProps) {
     onSavingChange?.(isSaving);
   }, [isSaving, onSavingChange]);
 
-  const handleSubmit = async (e?: React.FormEvent) => {
-    if (e) e.preventDefault();
+  const isSubmittingRef = useRef(false);
 
+  const handleSubmit = async (e?: React.FormEvent) => {
+    if (e) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
+    if (isSubmittingRef.current || isUpdating) return;
+
+    isSubmittingRef.current = true;
     try {
       await updateSettings({
         companyName: companyName.trim(),
@@ -164,6 +171,8 @@ export function GeneralSettings({ onSavingChange }: GeneralSettingsProps) {
       const msg =
         err?.data?.message || err?.message || "Failed to update company settings";
       error(msg);
+    } finally {
+      isSubmittingRef.current = false;
     }
   };
 

@@ -69,8 +69,7 @@ export function SettingsContainer() {
             Settings
           </div>
           <button
-            type="submit"
-            form={activeSection === "general" ? "general-settings-form" : undefined}
+            type="button"
             onClick={handleSave}
             disabled={isSaving}
             className="h-10 px-4 py-2 bg-[#103D5C] hover:bg-[#0b2841] text-white text-sm font-medium rounded-lg flex justify-center items-center gap-2 transition-colors disabled:opacity-50"
