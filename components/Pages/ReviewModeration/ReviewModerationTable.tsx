@@ -2,12 +2,14 @@
 
 import React, { useState, useMemo, useEffect } from "react";
 import Image from "next/image";
+import Link from "next/link";
 import { Star, MoreVertical, Loader2 } from "lucide-react";
 import { Column, DataTable } from "../../shared/DataTable";
 import CustomDropdown from "../../shared/CustomDropdown";
 import CustomModal from "@/components/shared/CustomModal";
 import ReviewDetails from "./ReviewDetails";
 import { TableToolbar } from "@/components/shared/TableToolbar";
+import { useDebounce } from "@/hooks/useDebounce";
 import {
   useGetReviewsQuery,
   useModerateReviewMutation,
@@ -36,6 +38,7 @@ const STATUS_OPTIONS = [
 export interface ReviewRecord {
   id: string;
   jobId: string;
+  rawJobId?: string | null;
   service: {
     title: string;
     category: string;
@@ -88,15 +91,13 @@ export function ReviewModerationTable() {
   const [isViewReviewModalOpen, setIsViewReviewModalOpen] = useState(false);
   const [selectedReview, setSelectedReview] = useState<ReviewRecord | null>(null);
 
-  // Debounced search
-  const [debouncedSearch, setDebouncedSearch] = useState("");
+  // Custom debounce hook for live search
+  const debouncedSearch = useDebounce(searchTerm, 400);
+
+  // Reset page when search or filters change
   useEffect(() => {
-    const handler = setTimeout(() => {
-      setDebouncedSearch(searchTerm);
-      setPage(1);
-    }, 400);
-    return () => clearTimeout(handler);
-  }, [searchTerm]);
+    setPage(1);
+  }, [debouncedSearch, rating, status]);
 
   const queryParams = useMemo(() => {
     const numericRating = parseRatingValue(rating);
@@ -161,6 +162,7 @@ export function ReviewModerationTable() {
         item.service?.image ||
         "https://images.unsplash.com/photo-1621905251189-08b45d6a269e?w=100&auto=format&fit=crop&q=80";
 
+      const rawJobId = item.job?.id || item.jobId || null;
       const displayJobId =
         item.job?.requestNumber ||
         (item.jobId
@@ -194,6 +196,7 @@ export function ReviewModerationTable() {
       return {
         id: item.id,
         jobId: displayJobId,
+        rawJobId,
         service: {
           title: serviceTitle,
           category: serviceCategory,
@@ -315,11 +318,19 @@ export function ReviewModerationTable() {
       key: "jobId",
       header: "Job ID",
       className: "min-w-[100px]",
-      cell: (item) => (
-        <span className="text-xs font-normal text-[#103D5C] font-['Manrope']">
-          {item.jobId}
-        </span>
-      ),
+      cell: (item) =>
+        item.rawJobId ? (
+          <Link
+            href={`/dashboard/jobs/${item.rawJobId}`}
+            className="text-xs font-semibold text-[#103D5C] hover:underline font-['Manrope'] cursor-pointer"
+          >
+            {item.jobId}
+          </Link>
+        ) : (
+          <span className="text-xs font-normal text-[#103D5C] font-['Manrope']">
+            {item.jobId}
+          </span>
+        ),
     },
     {
       key: "service",
