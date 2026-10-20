@@ -285,76 +285,16 @@ export const settingsApi = baseApi.injectEndpoints({
       providesTags: [{ type: "Settings", id: "NOTIFICATIONS" }],
     }),
 
-    getNotificationsByTargetType: builder.query<
-      NotificationSettingItem[],
-      NotificationTargetType
-    >({
+    getNotificationsByTargetType: builder.query<any, NotificationTargetType>({
       query: (targetType) => ({
         url: `/admin/settings/notifications/${targetType}`,
         method: "GET",
       }),
-      transformResponse: (
-        response: ApiResponse<any> | any,
-        _meta,
-        targetType
-      ): NotificationSettingItem[] => {
-        const raw =
-          response && "data" in response && response.data !== undefined
-            ? response.data
-            : response;
-
-        if (Array.isArray(raw)) {
-          return raw.map((item) =>
-            typeof item === "string"
-              ? { category: item, enabled: true, targetType }
-              : { ...item, targetType: item.targetType || targetType }
-          );
+      transformResponse: (response: ApiResponse<any> | any) => {
+        if (response && "data" in response && response.data !== undefined) {
+          return response.data;
         }
-
-        if (raw && typeof raw === "object") {
-          const list =
-            raw.items ||
-            raw.notifications ||
-            raw.settings ||
-            raw.categories ||
-            raw.data;
-          if (Array.isArray(list)) {
-            return list.map((item: any) =>
-              typeof item === "string"
-                ? { category: item, enabled: true, targetType }
-                : { ...item, targetType: item.targetType || targetType }
-            );
-          }
-
-          // If returned as an object map: { JOB_UPDATES: true, ... }
-          const entries = Object.entries(raw).filter(
-            ([k]) =>
-              ![
-                "id",
-                "_id",
-                "createdAt",
-                "updatedAt",
-                "targetType",
-                "success",
-                "statusCode",
-                "message",
-              ].includes(k)
-          );
-          if (entries.length > 0) {
-            return entries.map(([cat, val]) => ({
-              category: cat,
-              enabled:
-                typeof val === "boolean"
-                  ? val
-                  : Boolean((val as any)?.enabled ?? true),
-              targetType,
-              title: (val as any)?.title || (val as any)?.name,
-              description: (val as any)?.description,
-            }));
-          }
-        }
-
-        return [];
+        return response;
       },
       providesTags: (_result, _error, targetType) => [
         { type: "Settings", id: `NOTIFICATIONS_${targetType}` },
@@ -362,23 +302,16 @@ export const settingsApi = baseApi.injectEndpoints({
       ],
     }),
 
-    getNotificationCategories: builder.query<NotificationCategoryItem[], void>({
+    getNotificationCategories: builder.query<any, void>({
       query: () => ({
         url: "/admin/settings/notifications/categories",
         method: "GET",
       }),
       transformResponse: (response: ApiResponse<any> | any) => {
-        const raw =
-          response && "data" in response && response.data !== undefined
-            ? response.data
-            : response;
-        if (Array.isArray(raw)) return raw;
-        if (raw && typeof raw === "object") {
-          if (Array.isArray(raw.categories)) return raw.categories;
-          if (Array.isArray(raw.items)) return raw.items;
-          if (Array.isArray(raw.data)) return raw.data;
+        if (response && "data" in response && response.data !== undefined) {
+          return response.data;
         }
-        return [];
+        return response;
       },
       providesTags: [{ type: "Settings", id: "NOTIFICATION_CATEGORIES" }],
     }),

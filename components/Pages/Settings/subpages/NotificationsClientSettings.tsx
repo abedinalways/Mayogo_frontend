@@ -26,7 +26,7 @@ const INITIAL_SETTINGS: NotificationSetting[] = [
   {
     id: "quotations",
     categoryKey: "QUOTATIONS",
-    categoryTokens: ["quotations", "quotation", "offers", "offer"],
+    categoryTokens: ["quotation", "quote", "offer"],
     title: "Quotations & Offers",
     description:
       "Notify clients when experts send quotations, counter offers, or when a quotation requires attention before expiration.",
@@ -35,7 +35,7 @@ const INITIAL_SETTINGS: NotificationSetting[] = [
   {
     id: "job-updates",
     categoryKey: "JOB_UPDATES",
-    categoryTokens: ["job_updates", "job_update", "jobs", "job"],
+    categoryTokens: ["job_update", "job"],
     title: "Job Updates",
     description:
       "Notify clients about job requests, quotes, job progress, completion, and cancellations.",
@@ -51,6 +51,7 @@ const INITIAL_SETTINGS: NotificationSetting[] = [
       "payment",
       "refunds",
       "refund",
+      "transaction",
     ],
     title: "Payments & Refunds",
     description:
@@ -65,6 +66,7 @@ const INITIAL_SETTINGS: NotificationSetting[] = [
       "messages",
       "message",
       "communication",
+      "chat",
     ],
     title: "Messages & Communication",
     description:
@@ -80,6 +82,7 @@ const INITIAL_SETTINGS: NotificationSetting[] = [
       "support",
       "disputes",
       "dispute",
+      "ticket",
     ],
     title: "Support & Disputes",
     description:
@@ -94,6 +97,7 @@ const INITIAL_SETTINGS: NotificationSetting[] = [
       "account_setting",
       "account",
       "security",
+      "profile",
     ],
     title: "Account Settings",
     description:
@@ -101,6 +105,117 @@ const INITIAL_SETTINGS: NotificationSetting[] = [
     enabled: true,
   },
 ];
+
+interface ParsedBackendCategory {
+  category: string;
+  enabled?: boolean;
+  title?: string;
+  description?: string;
+}
+
+function parseNotificationPayload(
+  raw: any,
+  targetType: "CLIENT" | "EXPERT"
+): ParsedBackendCategory[] {
+  if (!raw) return [];
+  const results: ParsedBackendCategory[] = [];
+
+  const add = (
+    category: string,
+    enabled?: boolean,
+    title?: string,
+    description?: string
+  ) => {
+    if (!category || typeof category !== "string") return;
+    const cleanCat = category.trim();
+    if (!cleanCat) return;
+
+    const existing = results.find(
+      (r) => r.category.toUpperCase() === cleanCat.toUpperCase()
+    );
+    if (!existing) {
+      results.push({ category: cleanCat, enabled, title, description });
+    } else {
+      if (enabled !== undefined) existing.enabled = enabled;
+      if (title && !existing.title) existing.title = title;
+      if (description && !existing.description)
+        existing.description = description;
+    }
+  };
+
+  if (Array.isArray(raw)) {
+    raw.forEach((item) => {
+      if (typeof item === "string") {
+        add(item);
+      } else if (item && typeof item === "object") {
+        if (
+          !item.targetType ||
+          String(item.targetType).toUpperCase() === targetType
+        ) {
+          const cat = item.category || item.name || item.key || item.id;
+          const en =
+            typeof item.enabled === "boolean" ? item.enabled : undefined;
+          add(cat, en, item.title || item.name, item.description);
+        }
+      }
+    });
+    return results;
+  }
+
+  if (typeof raw === "object") {
+    const targetKey = targetType;
+    const lowerKey = targetType.toLowerCase();
+    const sub = raw[targetKey] || raw[lowerKey];
+    if (sub) {
+      return parseNotificationPayload(sub, targetType);
+    }
+
+    if (raw.settings && typeof raw.settings === "object") {
+      return parseNotificationPayload(raw.settings, targetType);
+    }
+    if (raw.categories) {
+      return parseNotificationPayload(raw.categories, targetType);
+    }
+    if (raw.items) {
+      return parseNotificationPayload(raw.items, targetType);
+    }
+    if (raw.data) {
+      return parseNotificationPayload(raw.data, targetType);
+    }
+
+    Object.entries(raw).forEach(([k, v]) => {
+      if (
+        ![
+          "success",
+          "statusCode",
+          "message",
+          "targetType",
+          "createdAt",
+          "updatedAt",
+          "id",
+          "_id",
+        ].includes(k)
+      ) {
+        if (typeof v === "boolean") {
+          add(k, v);
+        } else if (v && typeof v === "object") {
+          add(
+            k,
+            (v as any).enabled,
+            (v as any).title || (v as any).name,
+            (v as any).description
+          );
+        } else if (typeof v === "string") {
+          add(k);
+        }
+      }
+    });
+  }
+
+  return results;
+}
+
+const normalize = (s: string) => s.toLowerCase().replace(/[^a-z0-9]/g, "");
 
 function AmberToggle({
   enabled,
@@ -127,36 +242,6 @@ function AmberToggle({
   );
 }
 
-const normalize = (s: string) => s.toLowerCase().replace(/[^a-z0-9]/g, "");
-
-function findBestCategoryMatch(
-  itemId: string,
-  categoryTokens: string[],
-  availableCategories: string[]
-): string | null {
-  const normId = normalize(itemId);
-
-  // 1. Exact normalized equality with ID
-  const exact = availableCategories.find((c) => normalize(c) === normId);
-  if (exact) return exact;
-
-  // 2. Token match
-  for (const token of categoryTokens) {
-    const normToken = normalize(token);
-    const match = availableCategories.find((c) => {
-      const normC = normalize(c);
-      return (
-        normC === normToken ||
-        normC.includes(normToken) ||
-        normToken.includes(normC)
-      );
-    });
-    if (match) return match;
-  }
-
-  return null;
-}
-
 export function NotificationsClientSettings({
   onSavingChange,
 }: NotificationsClientSettingsProps = {}) {
@@ -168,134 +253,131 @@ export function NotificationsClientSettings({
   const [settings, setSettings] = useState<NotificationSetting[]>(INITIAL_SETTINGS);
   const [updatingId, setUpdatingId] = useState<string | null>(null);
 
-  // Extract all available categories for CLIENT from categories query
-  const availableClientCategories = useMemo<string[]>(() => {
-    const categories: string[] = [];
+  // Combine and parse all valid categories from both categories endpoint and targetType endpoint
+  const backendCategories = useMemo<ParsedBackendCategory[]>(() => {
+    const fromCat = parseNotificationPayload(rawCategories, "CLIENT");
+    const fromRemote = parseNotificationPayload(remoteData, "CLIENT");
 
-    if (Array.isArray(rawCategories)) {
-      rawCategories.forEach((item: any) => {
-        if (typeof item === "string") {
-          categories.push(item);
-        } else if (item && typeof item === "object") {
-          if (
-            !item.targetType ||
-            String(item.targetType).toUpperCase() === "CLIENT"
-          ) {
-            const cat = item.category || item.name || item.key;
-            if (cat) categories.push(String(cat));
-          }
-        }
-      });
-    } else if (rawCategories && typeof rawCategories === "object") {
-      const list =
-        (rawCategories as any).client ||
-        (rawCategories as any).CLIENT ||
-        (rawCategories as any).categories;
-      if (Array.isArray(list)) {
-        list.forEach((c: any) => {
-          if (typeof c === "string") categories.push(c);
-          else if (c?.category) categories.push(String(c.category));
-        });
+    const map = new Map<string, ParsedBackendCategory>();
+    fromCat.forEach((c) => map.set(c.category.toUpperCase(), c));
+    fromRemote.forEach((r) => {
+      const existing = map.get(r.category.toUpperCase());
+      if (existing) {
+        if (r.enabled !== undefined) existing.enabled = r.enabled;
+        if (r.title) existing.title = r.title;
+        if (r.description) existing.description = r.description;
+      } else {
+        map.set(r.category.toUpperCase(), r);
       }
-    }
+    });
 
-    // Also include any categories present in remoteData
-    if (Array.isArray(remoteData)) {
-      remoteData.forEach((r) => {
-        if (r.category && !categories.includes(r.category)) {
-          categories.push(r.category);
-        }
-      });
-    }
-
-    return Array.from(new Set(categories));
+    return Array.from(map.values());
   }, [rawCategories, remoteData]);
 
-  // Sync settings with remote data and valid categories
+  // Sync settings with backend categories
   useEffect(() => {
+    if (backendCategories.length === 0) return;
+
     setSettings((prev) => {
       const updated = [...prev];
-      const matchedRemoteIndices = new Set<number>();
+      const matchedCategories = new Set<string>();
 
       updated.forEach((item, idx) => {
-        // Find best match in available categories
-        const matchedCat = findBestCategoryMatch(
-          item.id,
-          item.categoryTokens,
-          availableClientCategories
+        let matched = backendCategories.find(
+          (b) =>
+            !matchedCategories.has(b.category.toUpperCase()) &&
+            normalize(b.category) === normalize(item.id)
         );
 
-        let finalCategory = matchedCat || item.categoryKey;
-        let finalEnabled = item.enabled;
-        let finalTitle = item.title;
-        let finalDescription = item.description;
-
-        // Check if remoteData has an item for this category or id
-        if (Array.isArray(remoteData) && remoteData.length > 0) {
-          const rIndex = remoteData.findIndex(
-            (r, i) =>
-              !matchedRemoteIndices.has(i) &&
-              (r.category === finalCategory ||
-                normalize(r.category || "") === normalize(item.id) ||
-                normalize(r.category || "") === normalize(item.categoryKey) ||
-                item.categoryTokens.some((t) =>
-                  normalize(r.category || "").includes(normalize(t))
-                ))
+        if (!matched) {
+          matched = backendCategories.find(
+            (b) =>
+              !matchedCategories.has(b.category.toUpperCase()) &&
+              normalize(b.category) === normalize(item.categoryKey)
           );
-
-          if (rIndex !== -1) {
-            matchedRemoteIndices.add(rIndex);
-            const rItem = remoteData[rIndex];
-            if (rItem.category) finalCategory = rItem.category;
-            if (typeof rItem.enabled === "boolean") finalEnabled = rItem.enabled;
-            const fetchedTitle = rItem.title || rItem.name;
-            if (fetchedTitle) finalTitle = fetchedTitle;
-            if (rItem.description) finalDescription = rItem.description;
-          }
         }
 
-        updated[idx] = {
-          ...item,
-          categoryKey: finalCategory,
-          enabled: finalEnabled,
-          title: finalTitle,
-          description: finalDescription,
-        };
+        if (!matched) {
+          matched = backendCategories.find(
+            (b) =>
+              !matchedCategories.has(b.category.toUpperCase()) &&
+              item.categoryTokens.some((tok) => {
+                const nCat = normalize(b.category);
+                const nTok = normalize(tok);
+                return nCat === nTok || nCat.includes(nTok) || nTok.includes(nCat);
+              })
+          );
+        }
+
+        if (matched) {
+          matchedCategories.add(matched.category.toUpperCase());
+          updated[idx] = {
+            ...item,
+            categoryKey: matched.category,
+            enabled:
+              matched.enabled !== undefined ? matched.enabled : item.enabled,
+            title: matched.title || item.title,
+            description: matched.description || item.description,
+          };
+        }
       });
 
-      // Append any extra remote categories from backend not in initial list
-      if (Array.isArray(remoteData)) {
-        remoteData.forEach((r, i) => {
-          if (!matchedRemoteIndices.has(i) && r.category) {
-            const rawCat = String(r.category);
-            const prettyTitle =
-              r.title ||
-              r.name ||
-              rawCat
-                .toLowerCase()
-                .replace(/_/g, " ")
-                .replace(/\b\w/g, (c) => c.toUpperCase());
-            updated.push({
-              id: rawCat.toLowerCase().replace(/_/g, "-"),
-              categoryKey: rawCat,
-              categoryTokens: [rawCat.toLowerCase()],
-              title: prettyTitle,
-              description:
-                r.description ||
-                `Control ${prettyTitle.toLowerCase()} notifications.`,
-              enabled: Boolean(r.enabled),
-            });
-          }
-        });
-      }
+      // Append any extra backend categories not in initial list
+      backendCategories.forEach((b) => {
+        if (!matchedCategories.has(b.category.toUpperCase())) {
+          const rawCat = b.category;
+          const prettyTitle =
+            b.title ||
+            rawCat
+              .toLowerCase()
+              .replace(/_/g, " ")
+              .replace(/\b\w/g, (c) => c.toUpperCase());
+          updated.push({
+            id: rawCat.toLowerCase().replace(/_/g, "-"),
+            categoryKey: rawCat,
+            categoryTokens: [rawCat.toLowerCase()],
+            title: prettyTitle,
+            description:
+              b.description ||
+              `Control ${prettyTitle.toLowerCase()} notifications.`,
+            enabled: b.enabled !== undefined ? b.enabled : true,
+          });
+        }
+      });
 
       return updated;
     });
-  }, [remoteData, availableClientCategories]);
+  }, [backendCategories]);
 
   const toggleSetting = async (id: string) => {
     const target = settings.find((s) => s.id === id);
     if (!target) return;
+
+    // Check if the category is supported by the server
+    if (backendCategories.length > 0) {
+      const isValidOnServer = backendCategories.some(
+        (b) => b.category.toUpperCase() === target.categoryKey.toUpperCase()
+      );
+
+      if (!isValidOnServer) {
+        const bestAlternative = backendCategories.find((b) =>
+          target.categoryTokens.some((tok) => {
+            const nCat = normalize(b.category);
+            const nTok = normalize(tok);
+            return nCat === nTok || nCat.includes(nTok) || nTok.includes(nCat);
+          })
+        );
+
+        if (bestAlternative) {
+          target.categoryKey = bestAlternative.category;
+        } else {
+          error(
+            `"${target.title}" notification category is not supported for Client accounts on the server.`
+          );
+          return;
+        }
+      }
+    }
 
     const nextEnabled = !target.enabled;
 
