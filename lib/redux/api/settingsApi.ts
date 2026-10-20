@@ -4,10 +4,15 @@ import {
   CompanySettings,
   UpdateCompanySettingsDto,
   CompanyLogoUploadResponse,
+  PlanItem,
+  GetPlansQueryParams,
+  CreatePlanDto,
+  UpdatePlanDto,
 } from "@/types/settings.types";
 
 export const settingsApi = baseApi.injectEndpoints({
   endpoints: (builder) => ({
+    // ── General Company Settings ───────────────────────────────────────
     getCompanySettings: builder.query<CompanySettings, void>({
       query: () => ({
         url: "/admin/settings/general/company",
@@ -93,6 +98,117 @@ export const settingsApi = baseApi.injectEndpoints({
       },
       invalidatesTags: [{ type: "Settings", id: "COMPANY" }],
     }),
+
+    // ── Plan & Pricing Settings ─────────────────────────────────────────
+    getPlans: builder.query<PlanItem[], GetPlansQueryParams | void>({
+      query: (params) => {
+        const queryParams: Record<string, any> = {};
+        if (params?.limit !== undefined) queryParams.limit = params.limit;
+        if (params?.offset !== undefined) queryParams.offset = params.offset;
+        if (params?.status && params.status !== "ALL") {
+          queryParams.status = params.status;
+        }
+        return {
+          url: "/admin/settings/plans",
+          method: "GET",
+          params: queryParams,
+        };
+      },
+      transformResponse: (
+        response:
+          | ApiResponse<
+              | PlanItem[]
+              | { plans?: PlanItem[]; items?: PlanItem[]; data?: PlanItem[] }
+            >
+          | PlanItem[]
+          | { plans?: PlanItem[]; items?: PlanItem[]; data?: PlanItem[] }
+      ) => {
+        const raw =
+          response && "data" in response && response.data
+            ? response.data
+            : response;
+
+        if (Array.isArray(raw)) return raw;
+        if (raw && typeof raw === "object") {
+          if (Array.isArray((raw as any).plans)) return (raw as any).plans;
+          if (Array.isArray((raw as any).items)) return (raw as any).items;
+          if (Array.isArray((raw as any).data)) return (raw as any).data;
+        }
+        return [];
+      },
+      providesTags: [{ type: "Settings", id: "PLANS_LIST" }],
+    }),
+
+    getPlanById: builder.query<PlanItem, string>({
+      query: (id) => ({
+        url: `/admin/settings/plans/${id}`,
+        method: "GET",
+      }),
+      transformResponse: (response: ApiResponse<PlanItem> | PlanItem) => {
+        if (response && "data" in response && response.data) {
+          return response.data;
+        }
+        return response as PlanItem;
+      },
+      providesTags: (_result, _error, id) => [
+        { type: "Settings", id: `PLAN_${id}` },
+      ],
+    }),
+
+    createPlan: builder.mutation<PlanItem, CreatePlanDto>({
+      query: (body) => ({
+        url: "/admin/settings/plans",
+        method: "POST",
+        body,
+      }),
+      transformResponse: (response: ApiResponse<PlanItem> | PlanItem) => {
+        if (response && "data" in response && response.data) {
+          return response.data;
+        }
+        return response as PlanItem;
+      },
+      invalidatesTags: [{ type: "Settings", id: "PLANS_LIST" }],
+    }),
+
+    updatePlan: builder.mutation<PlanItem, { id: string } & UpdatePlanDto>({
+      query: ({ id, ...body }) => ({
+        url: `/admin/settings/plans/${id}`,
+        method: "PATCH",
+        body,
+      }),
+      transformResponse: (response: ApiResponse<PlanItem> | PlanItem) => {
+        if (response && "data" in response && response.data) {
+          return response.data;
+        }
+        return response as PlanItem;
+      },
+      invalidatesTags: (_result, _error, { id }) => [
+        { type: "Settings", id: "PLANS_LIST" },
+        { type: "Settings", id: `PLAN_${id}` },
+      ],
+    }),
+
+    deletePlan: builder.mutation<
+      { success: boolean; message?: string },
+      string
+    >({
+      query: (id) => ({
+        url: `/admin/settings/plans/${id}`,
+        method: "DELETE",
+      }),
+      invalidatesTags: [{ type: "Settings", id: "PLANS_LIST" }],
+    }),
+
+    togglePlanStatus: builder.mutation<PlanItem, string>({
+      query: (id) => ({
+        url: `/admin/settings/plans/${id}/toggle-status`,
+        method: "PATCH",
+      }),
+      invalidatesTags: (_result, _error, id) => [
+        { type: "Settings", id: "PLANS_LIST" },
+        { type: "Settings", id: `PLAN_${id}` },
+      ],
+    }),
   }),
 });
 
@@ -101,4 +217,10 @@ export const {
   useUpdateCompanySettingsMutation,
   useUploadCompanyLogoMutation,
   useRemoveCompanyLogoMutation,
+  useGetPlansQuery,
+  useGetPlanByIdQuery,
+  useCreatePlanMutation,
+  useUpdatePlanMutation,
+  useDeletePlanMutation,
+  useTogglePlanStatusMutation,
 } = settingsApi;
