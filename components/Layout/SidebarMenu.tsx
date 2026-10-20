@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { usePathname } from "next/navigation";
 import { ChevronDown } from "lucide-react";
 import { SidebarMenuItem } from "./SidebarMenuItem";
@@ -16,10 +16,15 @@ import {
 import { useGetProfileQuery } from "@/lib/redux/api/authApi";
 
 export function SidebarMenu({ onNavigate }: { onNavigate?: () => void }) {
+  const [isMounted, setIsMounted] = useState(false);
   const pathname = usePathname();
   const isAuthenticated = useAppSelector(selectIsAuthenticated);
   const currentUser = useAppSelector(selectCurrentUser);
   const authLoading = useAppSelector(selectAuthLoading);
+
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
 
   const { isError: isProfileError } = useGetProfileQuery(undefined, {
     skip: !isAuthenticated,
@@ -77,6 +82,7 @@ export function SidebarMenu({ onNavigate }: { onNavigate?: () => void }) {
   };
 
   const isInitialLoading =
+    !isMounted ||
     authLoading ||
     (isAuthenticated && !currentUser && !isProfileError);
 
