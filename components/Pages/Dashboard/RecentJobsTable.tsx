@@ -3,10 +3,12 @@
 import React from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { ArrowRight, Loader2 } from "lucide-react";
+import { ArrowRight } from "lucide-react";
 import { Column, DataTable } from "../../shared/DataTable";
 import { StatusBadge, type StatusType } from "../../shared/StatusBadge";
+import { useGetRecentJobsQuery } from "@/lib/redux/api/dashboardApi";
 import { useGetJobsQuery } from "@/lib/redux/api/jobApi";
+import { DashboardRecentJobItem } from "@/types/dashboard.types";
 import { AdminJobItem } from "@/types/job.types";
 
 export interface JobRecord {
@@ -35,6 +37,7 @@ const mapStatus = (status?: string): StatusType => {
       return "Completed";
     case "IN_PROGRESS":
     case "ACCEPTED":
+    case "QUOTED":
       return "In Progress";
     case "PENDING":
       return "Pending";
@@ -49,50 +52,102 @@ const mapStatus = (status?: string): StatusType => {
 
 export function RecentJobsTable() {
   const router = useRouter();
-  const { data: jobsResponse, isLoading } = useGetJobsQuery({
-    limit: 5,
-    sortBy: "NEWEST_FIRST",
-  });
 
-  const rawJobs: AdminJobItem[] = Array.isArray(jobsResponse?.data)
-    ? jobsResponse.data
-    : (jobsResponse?.data as unknown as { jobs?: AdminJobItem[]; data?: AdminJobItem[] })?.jobs ||
-      (jobsResponse?.data as unknown as { jobs?: AdminJobItem[]; data?: AdminJobItem[] })?.data ||
-      [];
+  const {
+    data: dashJobs,
+    isLoading: isDashLoading,
+  } = useGetRecentJobsQuery({ limit: 5 });
+
+  const {
+    data: fallbackJobsResponse,
+    isLoading: isFallbackLoading,
+  } = useGetJobsQuery(
+    { limit: 5, sortBy: "NEWEST_FIRST" },
+    { skip: Boolean(dashJobs && dashJobs.length > 0) }
+  );
+
+  const isLoading = isDashLoading && isFallbackLoading;
+
+  const rawJobs: (DashboardRecentJobItem | AdminJobItem)[] =
+    Array.isArray(dashJobs) && dashJobs.length > 0
+      ? dashJobs
+      : Array.isArray(fallbackJobsResponse?.data)
+      ? fallbackJobsResponse.data
+      : (fallbackJobsResponse?.data as unknown as { jobs?: AdminJobItem[]; data?: AdminJobItem[] })?.jobs ||
+        (fallbackJobsResponse?.data as unknown as { jobs?: AdminJobItem[]; data?: AdminJobItem[] })?.data ||
+        [];
 
   const jobs: JobRecord[] = rawJobs.map((item) => {
     const rawPaymentAmount =
-      typeof item.payment === "object" && item.payment !== null
-        ? (item.payment as any).amount
+      typeof (item as any).payment === "object" && (item as any).payment !== null
+        ? (item as any).payment.amount
         : undefined;
+
     const rawAmt =
       rawPaymentAmount ??
       item.latestQuote?.amount ??
       item.amount ??
       item.totalAmount ??
       0;
+
     const amountVal =
       typeof rawAmt === "number"
         ? `$${rawAmt.toLocaleString()}`
         : rawAmt
-        ? `$${(parseFloat(String(rawAmt || 0)) || 0).toLocaleString()}`
+        ? String(rawAmt).startsWith("$")
+          ? rawAmt
+          : `$${(parseFloat(String(rawAmt || 0)) || 0).toLocaleString()}`
         : "$0";
 
+    const serviceObj = typeof item.service === "object" ? item.service : null;
+    const categoryObj = typeof item.category === "object" ? item.category : null;
+
+    const serviceName =
+      serviceObj?.name ||
+      (typeof item.service === "string" ? item.service : undefined) ||
+      item.title ||
+      "Service Request";
+
+    const categoryName =
+      categoryObj?.name ||
+      serviceObj?.category ||
+      (typeof item.category === "string" ? item.category : undefined) ||
+      "General";
+
+    const serviceImage =
+      item.thumbnailUrl ||
+      serviceObj?.image ||
+      "https://images.unsplash.com/photo-1581578731548-c64695cc6952?w=80&auto=format&fit=crop&q=80";
+
+    const clientName =
+      item.client?.fullName || item.client?.name || "Client";
+    const clientAvatar =
+      item.client?.avatarUrl ||
+      item.client?.avatar ||
+      `https://ui-avatars.com/api/?name=${encodeURIComponent(clientName)}&background=0F3453&color=fff`;
+
+    const expertName =
+      item.expert?.fullName || item.expert?.name || "Unassigned";
+    const expertAvatar =
+      item.expert?.avatarUrl ||
+      item.expert?.avatar ||
+      `https://ui-avatars.com/api/?name=${encodeURIComponent(expertName)}&background=f2ad1b&color=fff`;
+
     return {
-      id: item.requestNumber || item.jobId || `#${item.id.slice(0, 8)}`,
+      id: item.requestNumber || item.jobId || `#${(item.id || "").slice(0, 8)}`,
       rawId: item.id,
       service: {
-        name: item.service?.name || item.title || "Service Request",
-        category: item.category?.name || item.service?.category || "General",
-        image: item.thumbnailUrl || item.service?.image || "https://placehold.co/28x28",
+        name: serviceName,
+        category: categoryName,
+        image: serviceImage,
       },
       client: {
-        name: item.client?.fullName || item.client?.name || "Client",
-        avatar: item.client?.avatarUrl || item.client?.avatar || "https://placehold.co/28x28",
+        name: clientName,
+        avatar: clientAvatar,
       },
       expert: {
-        name: item.expert?.fullName || item.expert?.name || "Unassigned",
-        avatar: item.expert?.avatarUrl || item.expert?.avatar || "https://placehold.co/28x28",
+        name: expertName,
+        avatar: expertAvatar,
       },
       status: mapStatus(item.status),
       amount: amountVal,
@@ -124,7 +179,8 @@ export function RecentJobsTable() {
             alt={item.service.name}
             className="h-7 w-7 rounded-sm border border-slate-200 object-cover"
             onError={(e) => {
-              (e.target as HTMLImageElement).src = "https://placehold.co/28x28";
+              (e.target as HTMLImageElement).src =
+                "https://images.unsplash.com/photo-1581578731548-c64695cc6952?w=80&auto=format&fit=crop&q=80";
             }}
           />
           <div className="flex flex-col">
@@ -149,7 +205,9 @@ export function RecentJobsTable() {
             alt={item.client.name}
             className="h-7 w-7 rounded-full border border-slate-200 object-cover"
             onError={(e) => {
-              (e.target as HTMLImageElement).src = "https://placehold.co/28x28";
+              (e.target as HTMLImageElement).src = `https://ui-avatars.com/api/?name=${encodeURIComponent(
+                item.client.name
+              )}&background=0F3453&color=fff`;
             }}
           />
           <span className="text-xs font-medium text-[#123e5e]">
@@ -169,7 +227,9 @@ export function RecentJobsTable() {
             alt={item.expert.name}
             className="h-7 w-7 rounded-full border border-slate-200 object-cover"
             onError={(e) => {
-              (e.target as HTMLImageElement).src = "https://placehold.co/28x28";
+              (e.target as HTMLImageElement).src = `https://ui-avatars.com/api/?name=${encodeURIComponent(
+                item.expert.name
+              )}&background=f2ad1b&color=fff`;
             }}
           />
           <span className="text-xs font-medium text-[#123e5e]">
@@ -215,18 +275,35 @@ export function RecentJobsTable() {
           <table className="w-full min-w-[700px] text-left">
             <thead>
               <tr className="border-b border-[#E8E8E8] bg-slate-50/60">
-                <th className="py-3 px-4"><div className="h-3.5 w-16 rounded bg-slate-200" /></th>
-                <th className="py-3 px-4"><div className="h-3.5 w-20 rounded bg-slate-200" /></th>
-                <th className="py-3 px-4"><div className="h-3.5 w-16 rounded bg-slate-200" /></th>
-                <th className="py-3 px-4"><div className="h-3.5 w-16 rounded bg-slate-200" /></th>
-                <th className="py-3 px-4"><div className="h-3.5 w-16 rounded bg-slate-200" /></th>
-                <th className="py-3 px-4"><div className="h-3.5 w-14 rounded bg-slate-200" /></th>
+                <th className="py-3 px-4">
+                  <div className="h-3.5 w-16 rounded bg-slate-200" />
+                </th>
+                <th className="py-3 px-4">
+                  <div className="h-3.5 w-20 rounded bg-slate-200" />
+                </th>
+                <th className="py-3 px-4">
+                  <div className="h-3.5 w-16 rounded bg-slate-200" />
+                </th>
+                <th className="py-3 px-4">
+                  <div className="h-3.5 w-16 rounded bg-slate-200" />
+                </th>
+                <th className="py-3 px-4">
+                  <div className="h-3.5 w-16 rounded bg-slate-200" />
+                </th>
+                <th className="py-3 px-4">
+                  <div className="h-3.5 w-14 rounded bg-slate-200" />
+                </th>
               </tr>
             </thead>
             <tbody>
               {[1, 2, 3, 4, 5].map((row) => (
-                <tr key={row} className="border-b border-slate-100 last:border-b-0">
-                  <td className="py-4 px-4"><div className="h-4 w-20 rounded bg-slate-200" /></td>
+                <tr
+                  key={row}
+                  className="border-b border-slate-100 last:border-b-0"
+                >
+                  <td className="py-4 px-4">
+                    <div className="h-4 w-20 rounded bg-slate-200" />
+                  </td>
                   <td className="py-4 px-4">
                     <div className="flex items-center gap-3">
                       <div className="h-8 w-8 shrink-0 rounded-lg bg-slate-200" />
@@ -248,8 +325,12 @@ export function RecentJobsTable() {
                       <div className="h-3.5 w-20 rounded bg-slate-100" />
                     </div>
                   </td>
-                  <td className="py-4 px-4"><div className="h-6 w-24 rounded-full bg-slate-100" /></td>
-                  <td className="py-4 px-4"><div className="h-4 w-16 rounded bg-slate-200" /></td>
+                  <td className="py-4 px-4">
+                    <div className="h-6 w-24 rounded-full bg-slate-100" />
+                  </td>
+                  <td className="py-4 px-4">
+                    <div className="h-4 w-16 rounded bg-slate-200" />
+                  </td>
                 </tr>
               ))}
             </tbody>
