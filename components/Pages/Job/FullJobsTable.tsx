@@ -81,15 +81,17 @@ export function FullJobsTable() {
     offset,
   });
 
-  const { jobList, totalCount } = useMemo(() => {
-    if (!data) return { jobList: [], totalCount: 0 };
+  const { jobList, totalCount, totalPages } = useMemo(() => {
+    if (!data) return { jobList: [], totalCount: 0, totalPages: 1 };
 
     let items: AdminJobItem[] = [];
     let total = 0;
+    let pages = 1;
 
     if (Array.isArray(data.data)) {
       items = data.data;
       total = data.meta?.total ?? data.data.length;
+      pages = data.meta?.totalPages ?? Math.max(1, Math.ceil(total / pageSize));
     } else if (data.data) {
       items =
         (data.data as any).jobs ||
@@ -97,6 +99,7 @@ export function FullJobsTable() {
         (data.data as any).items ||
         [];
       total = (data.data as any).total ?? data.meta?.total ?? items.length;
+      pages = data.meta?.totalPages ?? Math.max(1, Math.ceil(total / pageSize));
     }
 
     const mapped: FullJobRecord[] = items.map((j, index) => {
@@ -231,10 +234,14 @@ export function FullJobsTable() {
       };
     });
 
-    return { jobList: mapped, totalCount: total };
-  }, [data]);
+    return { jobList: mapped, totalCount: total, totalPages: pages };
+  }, [data, pageSize]);
 
-  const totalPages = Math.max(1, Math.ceil(totalCount / pageSize));
+  useEffect(() => {
+    if (totalPages && page > totalPages) {
+      setPage(1);
+    }
+  }, [totalPages, page]);
 
   const handleSelectAll = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.checked) {
@@ -507,6 +514,7 @@ export function FullJobsTable() {
             pageSizeOptions={[10, 20, 50, 100]}
             currentPage={page}
             totalPages={totalPages}
+            totalItems={totalCount}
             onPageChange={(newPage) => setPage(newPage)}
             onPageSizeChange={(newSize) => {
               setPageSize(newSize);
