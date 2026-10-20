@@ -23,28 +23,65 @@ interface EarningsData {
 }
 
 const DEFAULT_DATA: EarningsData[] = [
-  { month: "Jan", revenue: 2650, commission: 2250, formattedRevenue: "$120.5K", formattedCommission: "$16.2k" },
-  { month: "Feb", revenue: 2880, commission: 2600, formattedRevenue: "$122.8K", formattedCommission: "$17.1k" },
-  { month: "Mar", revenue: 2950, commission: 2680, formattedRevenue: "$123.4K", formattedCommission: "$17.8k" },
-  { month: "Apr", revenue: 2650, commission: 2250, formattedRevenue: "$121.0K", formattedCommission: "$16.5k" },
-  { month: "May", revenue: 2880, commission: 2600, formattedRevenue: "$122.5K", formattedCommission: "$17.0k" },
-  { month: "Jun", revenue: 2950, commission: 2680, formattedRevenue: "$123.8K", formattedCommission: "$18.0k" },
-  { month: "Jul", revenue: 3880, commission: 3550, formattedRevenue: "$124.5K", formattedCommission: "$18.4k" },
-  { month: "Aug", revenue: 3480, commission: 3200, formattedRevenue: "$124.0K", formattedCommission: "$18.1k" },
-  { month: "Sep", revenue: 2850, commission: 2600, formattedRevenue: "$122.9K", formattedCommission: "$17.2k" },
-  { month: "Oct", revenue: 2700, commission: 2550, formattedRevenue: "$122.1K", formattedCommission: "$16.8k" },
-  { month: "Nov", revenue: 2880, commission: 2600, formattedRevenue: "$123.0K", formattedCommission: "$17.3k" },
-  { month: "Dec", revenue: 3450, commission: 3200, formattedRevenue: "$124.2K", formattedCommission: "$18.2k" },
+  { month: "Jan", revenue: 2650, commission: 2250, formattedRevenue: "$2,650", formattedCommission: "$2,250" },
+  { month: "Feb", revenue: 2880, commission: 2600, formattedRevenue: "$2,880", formattedCommission: "$2,600" },
+  { month: "Mar", revenue: 2950, commission: 2680, formattedRevenue: "$2,950", formattedCommission: "$2,680" },
+  { month: "Apr", revenue: 2650, commission: 2250, formattedRevenue: "$2,650", formattedCommission: "$2,250" },
+  { month: "May", revenue: 2880, commission: 2600, formattedRevenue: "$2,880", formattedCommission: "$2,600" },
+  { month: "Jun", revenue: 2950, commission: 2680, formattedRevenue: "$2,950", formattedCommission: "$2,680" },
+  { month: "Jul", revenue: 3880, commission: 3550, formattedRevenue: "$3,880", formattedCommission: "$3,550" },
+  { month: "Aug", revenue: 3480, commission: 3200, formattedRevenue: "$3,480", formattedCommission: "$3,200" },
+  { month: "Sep", revenue: 2850, commission: 2600, formattedRevenue: "$2,850", formattedCommission: "$2,600" },
+  { month: "Oct", revenue: 2700, commission: 2550, formattedRevenue: "$2,700", formattedCommission: "$2,550" },
+  { month: "Nov", revenue: 2880, commission: 2600, formattedRevenue: "$2,880", formattedCommission: "$2,600" },
+  { month: "Dec", revenue: 3450, commission: 3200, formattedRevenue: "$3,450", formattedCommission: "$3,200" },
 ];
 
 const TIME_RANGE_MAP: Record<string, AnalyticsTimeframe> = {
   "Last 7 days": "last_7_days",
   "Last 30 days": "last_30_days",
   "Last 90 days": "last_90_days",
+  "Last 6 months": "last_6_months",
   "Last 12 months": "last_12_months",
+  "This year": "this_year",
+  "All time": "all_time",
 };
 
-const TIME_RANGES = ["Last 7 days", "Last 30 days", "Last 90 days", "Last 12 months"];
+const TIME_RANGES = [
+  "Last 7 days",
+  "Last 30 days",
+  "Last 90 days",
+  "Last 6 months",
+  "Last 12 months",
+];
+
+const SHORT_MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+
+const formatMonthLabel = (val: string): string => {
+  if (!val) return "";
+  if (SHORT_MONTHS.includes(val)) return val;
+
+  const isoMatch = val.match(/^\d{4}-(\d{2})/);
+  if (isoMatch) {
+    const mIdx = parseInt(isoMatch[1], 10) - 1;
+    if (mIdx >= 0 && mIdx < 12) return SHORT_MONTHS[mIdx];
+  }
+
+  const num = parseInt(val, 10);
+  if (!isNaN(num) && num >= 1 && num <= 12 && String(num) === val.trim()) {
+    return SHORT_MONTHS[num - 1];
+  }
+
+  const fullMonthMap: Record<string, string> = {
+    january: "Jan", february: "Feb", march: "Mar", april: "Apr",
+    may: "May", june: "Jun", july: "Jul", august: "Aug",
+    september: "Sep", october: "Oct", november: "Nov", december: "Dec",
+  };
+  const lower = val.toLowerCase();
+  if (fullMonthMap[lower]) return fullMonthMap[lower];
+
+  return val;
+};
 
 interface TooltipPayloadEntry {
   payload?: EarningsData;
@@ -120,25 +157,46 @@ export function RevenueTrend({ timeframe: parentTimeframe }: RevenueTrendProps) 
   const chartData = useMemo<EarningsData[]>(() => {
     const rawList = Array.isArray(apiResponse)
       ? apiResponse
-      : apiResponse?.trend || apiResponse?.items || apiResponse?.data || [];
+      : (apiResponse as any)?.trend ||
+        (apiResponse as any)?.items ||
+        (apiResponse as any)?.data ||
+        (apiResponse as any)?.chartData ||
+        (apiResponse as any)?.monthlyTrend ||
+        [];
 
     if (!rawList || rawList.length === 0) {
       return DEFAULT_DATA;
     }
 
-    return rawList.map((item) => {
-      const rev = Number(item.revenue || 0);
-      const comm = Number(item.commission || 0);
+    return rawList.map((item: any) => {
+      const rev = Number(
+        item.revenue ??
+          item.totalRevenue ??
+          item.grossRevenue ??
+          item.amount ??
+          item.total ??
+          0
+      );
+      const comm = Number(
+        item.commission ??
+          item.platformCommission ??
+          item.commissionRevenue ??
+          item.fee ??
+          0
+      );
+      const rawMonth = String(
+        item.month ||
+          item.name ||
+          item.label ||
+          item.day ||
+          item.date ||
+          item.period ||
+          ""
+      );
+      const formattedMonth = formatMonthLabel(rawMonth);
+
       return {
-        month: String(
-          item.month ||
-            item.name ||
-            item.label ||
-            item.day ||
-            item.date ||
-            item.period ||
-            ""
-        ),
+        month: formattedMonth || rawMonth,
         revenue: rev,
         commission: comm,
         formattedRevenue:
