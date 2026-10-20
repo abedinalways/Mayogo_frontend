@@ -46,11 +46,18 @@ export function SettingsContainer() {
   };
 
   const handleSave = () => {
-    setIsSaving(true);
-    setTimeout(() => {
-      setIsSaving(false);
-      alert("Settings saved successfully!");
-    }, 600);
+    if (activeSection === "general") {
+      window.dispatchEvent(
+        new CustomEvent("SETTINGS_SAVE_REQUEST", {
+          detail: { section: "general" },
+        })
+      );
+    } else {
+      setIsSaving(true);
+      setTimeout(() => {
+        setIsSaving(false);
+      }, 600);
+    }
   };
 
   return (
@@ -62,7 +69,8 @@ export function SettingsContainer() {
             Settings
           </div>
           <button
-            type="button"
+            type="submit"
+            form={activeSection === "general" ? "general-settings-form" : undefined}
             onClick={handleSave}
             disabled={isSaving}
             className="h-10 px-4 py-2 bg-[#103D5C] hover:bg-[#0b2841] text-white text-sm font-medium rounded-lg flex justify-center items-center gap-2 transition-colors disabled:opacity-50"
@@ -85,7 +93,9 @@ export function SettingsContainer() {
             {activeSection === "notifications-expert" && (
               <NotificationsExpertSettings />
             )}
-            {activeSection === "general" && <GeneralSettings />}
+            {activeSection === "general" && (
+              <GeneralSettings onSavingChange={setIsSaving} />
+            )}
             {activeSection === "plan-pricing" && <PlanPricingSettings />}
             {activeSection === "payment-escrow" && <PaymentEscrowSettings />}
             {activeSection === "security" && <SecuritySettings />}
