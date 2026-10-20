@@ -233,3 +233,31 @@ export interface ChangePasswordDto {
   newPassword: string;
   confirmPassword: string;
 }
+
+export interface SystemSettingsData {
+  id?: string;
+  userRegistration: boolean;
+  expertRegistration: boolean;
+  subscriptionPlans: boolean;
+  referralProgram: boolean;
+  reviewsRatings: boolean;
+  maintenanceMode: boolean;
+  createdAt?: string;
+  updatedAt?: string;
+  [key: string]: any;
+}
+
+export interface UpdateSystemDto {
+  userRegistration?: boolean;
+  expertRegistration?: boolean;
+  subscriptionPlans?: boolean;
+  referralProgram?: boolean;
+  reviewsRatings?: boolean;
+  maintenanceMode?: boolean;
+}
+
+export interface MaintenanceStatusResponse {
+  maintenanceMode?: boolean;
+  status?: boolean | string;
+  [key: string]: any;
+}

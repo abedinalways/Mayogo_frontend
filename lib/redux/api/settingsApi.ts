@@ -23,6 +23,9 @@ import {
   GetIpRestrictionsParams,
   ActiveSessionItem,
   ChangePasswordDto,
+  SystemSettingsData,
+  UpdateSystemDto,
+  MaintenanceStatusResponse,
 } from "@/types/settings.types";
 
 export const settingsApi = baseApi.injectEndpoints({
@@ -618,6 +621,99 @@ export const settingsApi = baseApi.injectEndpoints({
         return response as { success: boolean; message?: string };
       },
     }),
+
+    // ── System Settings ──────────────────────────────────────────────────
+    getSystemSettings: builder.query<SystemSettingsData, void>({
+      query: () => ({
+        url: "/admin/settings/system",
+        method: "GET",
+      }),
+      transformResponse: (
+        response: ApiResponse<SystemSettingsData> | SystemSettingsData
+      ) => {
+        if (response && "data" in response && response.data !== undefined) {
+          return response.data;
+        }
+        return response as SystemSettingsData;
+      },
+      providesTags: [{ type: "Settings", id: "SYSTEM" }],
+    }),
+
+    updateSystemSettings: builder.mutation<
+      SystemSettingsData,
+      UpdateSystemDto
+    >({
+      query: (body) => ({
+        url: "/admin/settings/system",
+        method: "PATCH",
+        body,
+      }),
+      transformResponse: (
+        response: ApiResponse<SystemSettingsData> | SystemSettingsData
+      ) => {
+        if (response && "data" in response && response.data !== undefined) {
+          return response.data;
+        }
+        return response as SystemSettingsData;
+      },
+      invalidatesTags: [
+        { type: "Settings", id: "SYSTEM" },
+        { type: "Settings", id: "MAINTENANCE" },
+      ],
+    }),
+
+    resetSystemSettings: builder.mutation<SystemSettingsData, void>({
+      query: () => ({
+        url: "/admin/settings/system/reset",
+        method: "POST",
+      }),
+      transformResponse: (
+        response: ApiResponse<SystemSettingsData> | SystemSettingsData
+      ) => {
+        if (response && "data" in response && response.data !== undefined) {
+          return response.data;
+        }
+        return response as SystemSettingsData;
+      },
+      invalidatesTags: [
+        { type: "Settings", id: "SYSTEM" },
+        { type: "Settings", id: "MAINTENANCE" },
+      ],
+    }),
+
+    toggleMaintenanceMode: builder.mutation<
+      { success?: boolean; maintenanceMode?: boolean; message?: string },
+      void
+    >({
+      query: () => ({
+        url: "/admin/settings/system/maintenance/toggle",
+        method: "POST",
+      }),
+      transformResponse: (response: ApiResponse<any> | any) => {
+        if (response && "data" in response && response.data !== undefined) {
+          return response.data;
+        }
+        return response;
+      },
+      invalidatesTags: [
+        { type: "Settings", id: "SYSTEM" },
+        { type: "Settings", id: "MAINTENANCE" },
+      ],
+    }),
+
+    getMaintenanceStatus: builder.query<MaintenanceStatusResponse, void>({
+      query: () => ({
+        url: "/admin/settings/system/maintenance/status",
+        method: "GET",
+      }),
+      transformResponse: (response: ApiResponse<any> | any) => {
+        if (response && "data" in response && response.data !== undefined) {
+          return response.data;
+        }
+        return response;
+      },
+      providesTags: [{ type: "Settings", id: "MAINTENANCE" }],
+    }),
   }),
 });
 
@@ -652,5 +748,10 @@ export const {
   useEndSessionMutation,
   useEndAllSessionsMutation,
   useChangePasswordMutation,
+  useGetSystemSettingsQuery,
+  useUpdateSystemSettingsMutation,
+  useResetSystemSettingsMutation,
+  useToggleMaintenanceModeMutation,
+  useGetMaintenanceStatusQuery,
 } = settingsApi;
 

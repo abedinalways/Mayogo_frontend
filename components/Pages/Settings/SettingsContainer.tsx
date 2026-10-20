@@ -76,6 +76,12 @@ export function SettingsContainer() {
           detail: { section: "security" },
         })
       );
+    } else if (activeSection === "system") {
+      window.dispatchEvent(
+        new CustomEvent("SETTINGS_SAVE_REQUEST", {
+          detail: { section: "system" },
+        })
+      );
     } else {
       setIsSaving(true);
       setTimeout(() => {
@@ -126,7 +132,9 @@ export function SettingsContainer() {
             {activeSection === "security" && (
               <SecuritySettings onSavingChange={setIsSaving} />
             )}
-            {activeSection === "system" && <SystemSettings />}
+            {activeSection === "system" && (
+              <SystemSettings onSavingChange={setIsSaving} />
+            )}
           </div>
         </div>
       </div>
