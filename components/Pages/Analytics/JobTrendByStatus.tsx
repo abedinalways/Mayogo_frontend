@@ -92,7 +92,18 @@ export function JobTrendByStatus({ timeframe: parentTimeframe }: JobTrendByStatu
   const [timeRange, setTimeRange] = useState("Last 6 months");
   const [dropdownOpen, setDropdownOpen] = useState(false);
 
-  const activeTimeframe = parentTimeframe || TIME_RANGE_MAP[timeRange] || "last_6_months";
+  React.useEffect(() => {
+    if (parentTimeframe) {
+      const matched = Object.keys(TIME_RANGE_MAP).find(
+        (key) => TIME_RANGE_MAP[key] === parentTimeframe
+      );
+      if (matched) {
+        setTimeRange(matched);
+      }
+    }
+  }, [parentTimeframe]);
+
+  const activeTimeframe = TIME_RANGE_MAP[timeRange] || parentTimeframe || "last_6_months";
 
   const {
     data: apiResponse,

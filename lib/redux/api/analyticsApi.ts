@@ -270,7 +270,14 @@ export async function downloadAnalyticsReport(params: AnalyticsQueryParams = {})
   });
 
   if (!response.ok) {
-    throw new Error(`Failed to export report: ${response.statusText}`);
+    let errMsg = response.statusText;
+    try {
+      const errJson = await response.json();
+      errMsg = errJson.message || errJson.error || errMsg;
+    } catch {
+      // ignore json parse error
+    }
+    throw new Error(`Failed to export report: ${errMsg}`);
   }
 
   const blob = await response.blob();
