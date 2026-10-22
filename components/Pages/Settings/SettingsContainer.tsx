@@ -46,11 +46,48 @@ export function SettingsContainer() {
   };
 
   const handleSave = () => {
-    setIsSaving(true);
-    setTimeout(() => {
-      setIsSaving(false);
-      alert("Settings saved successfully!");
-    }, 600);
+    if (activeSection === "general") {
+      window.dispatchEvent(
+        new CustomEvent("SETTINGS_SAVE_REQUEST", {
+          detail: { section: "general" },
+        })
+      );
+    } else if (activeSection === "payment-escrow") {
+      window.dispatchEvent(
+        new CustomEvent("SETTINGS_SAVE_REQUEST", {
+          detail: { section: "payment-escrow" },
+        })
+      );
+    } else if (activeSection === "notifications-client") {
+      window.dispatchEvent(
+        new CustomEvent("SETTINGS_SAVE_REQUEST", {
+          detail: { section: "notifications-client" },
+        })
+      );
+    } else if (activeSection === "notifications-expert") {
+      window.dispatchEvent(
+        new CustomEvent("SETTINGS_SAVE_REQUEST", {
+          detail: { section: "notifications-expert" },
+        })
+      );
+    } else if (activeSection === "security") {
+      window.dispatchEvent(
+        new CustomEvent("SETTINGS_SAVE_REQUEST", {
+          detail: { section: "security" },
+        })
+      );
+    } else if (activeSection === "system") {
+      window.dispatchEvent(
+        new CustomEvent("SETTINGS_SAVE_REQUEST", {
+          detail: { section: "system" },
+        })
+      );
+    } else {
+      setIsSaving(true);
+      setTimeout(() => {
+        setIsSaving(false);
+      }, 600);
+    }
   };
 
   return (
@@ -80,16 +117,24 @@ export function SettingsContainer() {
 
           <div className="flex-1 min-h-[500px]">
             {activeSection === "notifications-client" && (
-              <NotificationsClientSettings />
+              <NotificationsClientSettings onSavingChange={setIsSaving} />
             )}
             {activeSection === "notifications-expert" && (
-              <NotificationsExpertSettings />
+              <NotificationsExpertSettings onSavingChange={setIsSaving} />
             )}
-            {activeSection === "general" && <GeneralSettings />}
+            {activeSection === "general" && (
+              <GeneralSettings onSavingChange={setIsSaving} />
+            )}
             {activeSection === "plan-pricing" && <PlanPricingSettings />}
-            {activeSection === "payment-escrow" && <PaymentEscrowSettings />}
-            {activeSection === "security" && <SecuritySettings />}
-            {activeSection === "system" && <SystemSettings />}
+            {activeSection === "payment-escrow" && (
+              <PaymentEscrowSettings onSavingChange={setIsSaving} />
+            )}
+            {activeSection === "security" && (
+              <SecuritySettings onSavingChange={setIsSaving} />
+            )}
+            {activeSection === "system" && (
+              <SystemSettings onSavingChange={setIsSaving} />
+            )}
           </div>
         </div>
       </div>

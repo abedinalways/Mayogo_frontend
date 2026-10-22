@@ -3,7 +3,7 @@
 import React, { useState } from "react";
 import { Column, DataTable } from "../../shared/DataTable";
 import TableToolbar from "../../shared/TableToolbar";
-import { Eye } from "lucide-react";
+import { Eye, PlusIcon, Loader2 } from "lucide-react";
 import CustomButton from "@/components/shared/CustomButton";
 import CustomModal from "@/components/shared/CustomModal";
 import EditIcon from "@/components/Icons/EditIcon";
@@ -14,76 +14,43 @@ import AddBanner, {
 import EditBanner from "./ContentManagementAllModal/EditBanner";
 import PreviewBanner from "./ContentManagementAllModal/PreviewBanner";
 import DeleteAnnouncement from "./ContentManagementAllModal/DeleteAnnouncement";
+import {
+  useGetBannersQuery,
+  useCreateBannerMutation,
+  useUpdateBannerMutation,
+  useDeleteBannerMutation,
+} from "@/lib/redux/api/contentApi";
+import { BannerItem } from "@/types/content.types";
 
-export interface UserRecord {
+export interface BannerRecord {
   id: string;
   title: string;
   description: string;
+  subtitle?: string;
+  ctaText?: string;
+  ctaLink?: string;
+  imageUrl?: string;
   audience: string;
   status: string;
   startDate: string;
   endDate: string;
 }
 
-export type BannerRecord = UserRecord;
-
-const sampleBanners: UserRecord[] = [
-  {
-    id: "1",
-    title: "Trusted Experts Near You",
-    description: "Hire verified experts for every service in minutes.",
-    audience: "Clients",
-    status: "Live",
-    startDate: "Jul 27, 2026",
-    endDate: "Aug 30, 2026",
-  },
-  {
-    id: "2",
-    title: "Fast-Track Project Delivery with Escrow",
-    description:
-      "Secure payment protection and milestone verification built for high-stakes projects.",
-    audience: "All",
-    status: "Live",
-    startDate: "Jul 27, 2026",
-    endDate: "Aug 30, 2026",
-  },
-  {
-    id: "3",
-    title: "Special Autumn Referral Discount 2026",
-    description: "Earn 5% platform cashback when you invite business partners.",
-    audience: "Experts",
-    status: "Draft",
-    startDate: "Jul 27, 2026",
-    endDate: "Aug 30, 2026",
-  },
-];
-
 const StatusBadge = ({ status }: { status: string }) => {
-  const config = {
-    Live: {
-      bg: "bg-sky-50",
-      border: "outline-sky-200",
-      text: "text-[#0777F6]",
-      dot: "bg-[#0777F6]",
-    },
-    Draft: {
-      bg: "bg-[#FEF4DC]",
-      border: "outline-[#F8B500]",
-      text: "text-[#F8B500]",
-      dot: "bg-[#F8B500]",
-    },
-    Suspended: {
-      bg: "bg-rose-50",
-      border: "outline-rose-200",
-      text: "text-rose-600",
-      dot: "bg-rose-500",
-    },
-  }[status] ?? {
-    bg: "bg-slate-50",
-    border: "outline-slate-200",
-    text: "text-slate-600",
-    dot: "bg-slate-400",
-  };
+  const isLive = status.toLowerCase() === "live";
+  const config = isLive
+    ? {
+        bg: "bg-sky-50",
+        border: "outline-sky-200",
+        text: "text-[#0777F6]",
+        dot: "bg-[#0777F6]",
+      }
+    : {
+        bg: "bg-[#FEF4DC]",
+        border: "outline-[#F8B500]",
+        text: "text-[#F8B500]",
+        dot: "bg-[#F8B500]",
+      };
 
   return (
     <div
@@ -93,130 +60,211 @@ const StatusBadge = ({ status }: { status: string }) => {
       <span
         className={`font-['Manrope'] text-xs font-medium leading-4 ${config.text}`}
       >
-        {status}
+        {isLive ? "Live" : "Draft"}
       </span>
     </div>
   );
 };
 
-export function HomePageBannerTab() {
-  const [banners, setBanners] = useState<UserRecord[]>(sampleBanners);
+export function HomepageBannerTab() {
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
-  const [roleFilter, setRoleFilter] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
+  const [audienceFilter, setAudienceFilter] = useState("");
 
-  // Modals state
+  const {
+    data: rawBanners = [],
+    isLoading,
+    isFetching,
+  } = useGetBannersQuery({
+    search: searchTerm || undefined,
+    status: statusFilter ? statusFilter.toUpperCase() : undefined,
+    audience: audienceFilter ? audienceFilter.toUpperCase() : undefined,
+  });
+
+  const [createBanner] = useCreateBannerMutation();
+  const [updateBanner] = useUpdateBannerMutation();
+  const [deleteBanner, { isLoading: isDeleting }] = useDeleteBannerMutation();
+
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isPreviewModalOpen, setIsPreviewModalOpen] = useState(false);
-  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
-
   const [selectedBanner, setSelectedBanner] = useState<BannerFormData | null>(
-    null,
+    null
   );
-  const [bannerToDelete, setBannerToDelete] = useState<UserRecord | null>(null);
+
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [bannerToDelete, setBannerToDelete] = useState<BannerRecord | null>(
+    null
+  );
+
+  const banners: BannerRecord[] = rawBanners.map((item: BannerItem) => {
+    let aud = "All";
+    if (item.audience?.toUpperCase() === "CLIENTS") aud = "Clients";
+    if (item.audience?.toUpperCase() === "EXPERTS") aud = "Experts";
+
+    return {
+      id: item.id,
+      title: item.title,
+      description: item.subtitle || "No subtitle provided",
+      subtitle: item.subtitle,
+      ctaText: item.ctaText,
+      ctaLink: item.ctaLink,
+      imageUrl: item.imageUrl,
+      audience: aud,
+      status: item.status?.toUpperCase() === "LIVE" ? "Live" : "Draft",
+      startDate: item.createdAt
+        ? new Date(item.createdAt).toLocaleDateString("en-US", {
+            month: "short",
+            day: "2-digit",
+            year: "numeric",
+          })
+        : "N/A",
+      endDate: item.updatedAt
+        ? new Date(item.updatedAt).toLocaleDateString("en-US", {
+            month: "short",
+            day: "2-digit",
+            year: "numeric",
+          })
+        : "Active",
+    };
+  });
 
   const handleSelectAll = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.checked) {
-      setSelectedIds(filteredBanners.map((item) => item.id));
+      setSelectedIds(banners.map((item) => item.id));
     } else {
       setSelectedIds([]);
     }
   };
 
-  // Add new banner
-  const handleAddBanner = (formData: BannerFormData) => {
-    const newBanner: UserRecord = {
-      id: String(Date.now()),
-      title: formData.title,
-      description: formData.subtitle,
-      audience: formData.audience,
-      status: formData.status,
-      startDate: new Date().toLocaleDateString("en-GB", {
-        day: "2-digit",
-        month: "short",
-        year: "numeric",
-      }),
-      endDate: "Aug 30, 2026",
-    };
-    setBanners((prev) => [newBanner, ...prev]);
-    setIsAddModalOpen(false);
-    setSelectedBanner(null);
+  const handleSelectRow = (id: string) => {
+    setSelectedIds((prev) =>
+      prev.includes(id) ? prev.filter((item) => item !== id) : [...prev, id]
+    );
   };
 
-  // Edit banner
-  const handleEditBanner = (formData: BannerFormData) => {
-    if (formData.id) {
-      setBanners((prev) =>
-        prev.map((item) =>
-          item.id === formData.id
-            ? {
-                ...item,
-                title: formData.title,
-                description: formData.subtitle,
-                audience: formData.audience,
-                status: formData.status,
-              }
-            : item,
-        ),
-      );
+  const handleCreateBanner = async (data: BannerFormData) => {
+    try {
+      const payloadAudience =
+        data.audience?.toUpperCase() === "EXPERTS"
+          ? "EXPERTS"
+          : data.audience?.toUpperCase() === "CLIENTS"
+          ? "CLIENTS"
+          : "ALL";
+
+      const payloadStatus =
+        data.status.toLowerCase() === "live" ? "LIVE" : "DRAFT";
+
+      await createBanner({
+        title: data.title,
+        subtitle: data.subtitle,
+        ctaText: data.ctaText,
+        ctaLink: data.ctaLink,
+        imageUrl: data.image,
+        audience: payloadAudience,
+        status: payloadStatus,
+      }).unwrap();
+
+      setIsAddModalOpen(false);
+    } catch {
+      // Handled by mutation
     }
-    setIsEditModalOpen(false);
-    setSelectedBanner(null);
   };
 
-  // Delete banner
-  const handleDeleteConfirm = () => {
+  const handleUpdateBanner = async (data: BannerFormData) => {
+    if (!data.id) return;
+    try {
+      const payloadAudience =
+        data.audience?.toUpperCase() === "EXPERTS"
+          ? "EXPERTS"
+          : data.audience?.toUpperCase() === "CLIENTS"
+          ? "CLIENTS"
+          : "ALL";
+
+      const payloadStatus =
+        data.status.toLowerCase() === "live" ? "LIVE" : "DRAFT";
+
+      await updateBanner({
+        bannerId: data.id,
+        title: data.title,
+        subtitle: data.subtitle,
+        ctaText: data.ctaText,
+        ctaLink: data.ctaLink,
+        imageUrl: data.image,
+        audience: payloadAudience,
+        status: payloadStatus,
+      }).unwrap();
+
+      setIsEditModalOpen(false);
+      setSelectedBanner(null);
+    } catch {
+      // Handled by mutation
+    }
+  };
+
+  const handleConfirmDelete = async () => {
     if (bannerToDelete) {
-      setBanners((prev) => prev.filter((b) => b.id !== bannerToDelete.id));
-      setSelectedIds((prev) => prev.filter((id) => id !== bannerToDelete.id));
-      setBannerToDelete(null);
+      try {
+        await deleteBanner(bannerToDelete.id).unwrap();
+        setSelectedIds((prev) =>
+          prev.filter((id) => id !== bannerToDelete.id)
+        );
+        setBannerToDelete(null);
+        setIsDeleteModalOpen(false);
+      } catch {
+        setIsDeleteModalOpen(false);
+      }
     }
-    setIsDeleteModalOpen(false);
   };
 
-  const filteredBanners = banners.filter((b) => {
-    const matchesSearch =
-      b.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      b.description.toLowerCase().includes(searchTerm.toLowerCase());
-
-    const matchesAudience =
-      !roleFilter || b.audience.toLowerCase() === roleFilter.toLowerCase();
-
-    const matchesStatus =
-      !statusFilter || b.status.toLowerCase() === statusFilter.toLowerCase();
-
-    return matchesSearch && matchesAudience && matchesStatus;
-  });
-
-  const columns: Column<UserRecord>[] = [
+  const columns: Column<BannerRecord>[] = [
     {
-      key: "title",
-      header: "Title",
-      className: "min-w-[140px]",
+      key: "checkbox",
+      header: (
+        <div className="flex items-center gap-2 min-w-70">
+          <input
+            type="checkbox"
+            checked={
+              selectedIds.length === banners.length && banners.length > 0
+            }
+            onChange={handleSelectAll}
+            className="h-4 w-4 cursor-pointer rounded border-slate-300 text-[#0a3558] focus:ring-0"
+          />
+          <span className="text-xs font-medium text-slate-600">Title</span>
+        </div>
+      ),
+      className: "w-12 pl-6 pr-2",
       cell: (item) => (
-        <span className="overflow-hidden text-[#103D5C] font-medium text-ellipsis text-[13px] leading-[160%]">
-          {item.title}
-        </span>
+        <div className="flex items-center gap-2 min-w-70">
+          <input
+            type="checkbox"
+            checked={selectedIds.includes(item.id)}
+            onChange={() => handleSelectRow(item.id)}
+            className="h-4 w-4 cursor-pointer rounded border-slate-300 text-[#0a3558] focus:ring-0"
+          />
+          <span className="text-[#103D5C] text-[14px] font-normal leading-[22.4px]">
+            {item.title}
+          </span>
+        </div>
       ),
     },
     {
       key: "description",
-      header: "Subtitle",
-      className: "min-w-[160px]",
+      header: "Description / Subtitle",
+      className: "min-w-[280px]",
       cell: (item) => (
-        <span className="overflow-hidden text-[#5A5A5A] text-ellipsis text-[12px] font-medium leading-[160%] line-clamp-1">
+        <span className="text-[#475569] text-xs font-normal leading-[19.2px] line-clamp-2">
           {item.description}
         </span>
       ),
     },
     {
       key: "audience",
-      header: "Audience",
-      className: "min-w-[120px]",
+      header: "Target Audience",
+      className: "min-w-[140px]",
       cell: (item) => (
-        <span className="overflow-hidden text-[#5A5A5A] text-ellipsis text-[12px] font-medium leading-[160%]">
+        <span className="text-xs font-medium text-slate-600">
           {item.audience}
         </span>
       ),
@@ -224,7 +272,7 @@ export function HomePageBannerTab() {
     {
       key: "status",
       header: "Status",
-      className: "min-w-[120px]",
+      className: "min-w-[100px]",
       cell: (item) => <StatusBadge status={item.status} />,
     },
     {
@@ -232,78 +280,65 @@ export function HomePageBannerTab() {
       header: "Start Date",
       className: "min-w-[120px]",
       cell: (item) => (
-        <span className="overflow-hidden text-[#5A5A5A] text-ellipsis text-[12px] font-medium leading-[160%]">
+        <span className="text-xs font-medium text-slate-600 whitespace-nowrap">
           {item.startDate}
-        </span>
-      ),
-    },
-    {
-      key: "endDate",
-      header: "End Date",
-      className: "min-w-[120px]",
-      cell: (item) => (
-        <span className="overflow-hidden text-[#5A5A5A] text-ellipsis text-[12px] font-medium leading-[160%]">
-          {item.endDate}
         </span>
       ),
     },
     {
       key: "action",
       header: "Action",
-      className: "w-28 min-w-[110px] text-center",
+      className: "w-24 min-w-[96px] text-center",
       cell: (item) => (
-        <div className="flex items-center gap-1.5 justify-center">
-          {/* Preview Button */}
+        <div className="flex items-center gap-2 justify-center">
           <button
-            type="button"
             onClick={() => {
               setSelectedBanner({
                 id: item.id,
                 title: item.title,
-                subtitle: item.description,
-                ctaText: "Explore Experts",
-                ctaLink: "#",
+                subtitle: item.subtitle || "",
+                ctaText: item.ctaText || "Explore",
+                ctaLink: item.ctaLink || "#",
                 audience: item.audience,
                 status: item.status,
+                image: item.imageUrl,
               });
               setIsPreviewModalOpen(true);
             }}
-            className="flex h-8 w-8 items-center justify-center rounded border border-slate-200 text-slate-500 transition-colors hover:bg-slate-50 hover:text-slate-800"
-            title="Preview Banner"
-          >
-            <Eye className="h-4 w-4" />
-          </button>
-
-          {/* Edit Button */}
-          <button
             type="button"
+            className="flex h-8 w-8 items-center justify-center rounded border border-slate-200 text-slate-500 transition-colors hover:bg-slate-50 hover:text-slate-800"
+            aria-label="Preview banner"
+          >
+            <Eye className="w-4 h-4" />
+          </button>
+          <button
             onClick={() => {
               setSelectedBanner({
                 id: item.id,
                 title: item.title,
-                subtitle: item.description,
-                ctaText: "Explore Experts",
-                ctaLink: "#",
+                subtitle: item.subtitle || "",
+                ctaText: item.ctaText || "",
+                ctaLink: item.ctaLink || "",
                 audience: item.audience,
                 status: item.status,
+                image: item.imageUrl,
               });
               setIsEditModalOpen(true);
             }}
+            type="button"
             className="flex h-8 w-8 items-center justify-center rounded border border-slate-200 text-slate-500 transition-colors hover:bg-slate-50 hover:text-slate-800"
-            title="Edit Banner"
+            aria-label="Edit banner"
           >
             <EditIcon />
           </button>
-
-          {/* Delete Button */}
           <button
-            type="button"
             onClick={() => {
               setBannerToDelete(item);
               setIsDeleteModalOpen(true);
             }}
+            type="button"
             className="flex h-8 w-8 items-center justify-center rounded border border-slate-200 text-red-500 transition-colors hover:bg-red-50 hover:text-red-700"
-            title="Delete Banner"
+            aria-label="Delete banner"
           >
             <DeleteIcon />
           </button>
@@ -313,22 +348,11 @@ export function HomePageBannerTab() {
   ];
 
   return (
-    <div className="w-full font-['Manrope']">
-      {/* Top Toolbar with Search and Dropdown Filters */}
+    <div>
       <TableToolbar
         searchQuery={searchTerm}
         onSearchChange={(e) => setSearchTerm(e.target.value)}
         dropdownFilters={[
-          {
-            placeholder: "All Audience",
-            value: roleFilter,
-            options: [
-              { label: "All Audience", value: "" },
-              { label: "Clients", value: "clients" },
-              { label: "Experts", value: "experts" },
-            ],
-            onChange: (val) => setRoleFilter(val),
-          },
           {
             placeholder: "All Status",
             value: statusFilter,
@@ -339,48 +363,69 @@ export function HomePageBannerTab() {
             ],
             onChange: (val) => setStatusFilter(val),
           },
+          {
+            placeholder: "All Audience",
+            value: audienceFilter,
+            options: [
+              { label: "All Audience", value: "" },
+              { label: "All Users", value: "all" },
+              { label: "Clients", value: "clients" },
+              { label: "Experts", value: "experts" },
+            ],
+            onChange: (val) => setAudienceFilter(val),
+          },
         ]}
+        onSortClick={() => {}}
         actionButton={
           <CustomButton
+            onClick={() => setIsAddModalOpen(true)}
             size="md"
-            leadingIcon={<PlusIcon />}
-            onClick={() => {
-              setSelectedBanner(null);
-              setIsAddModalOpen(true);
-            }}
+            leadingIcon={<PlusIcon className="w-4 h-4" />}
           >
             Add Banner
           </CustomButton>
         }
       />
 
-      {/* Main Data Table */}
       <div className="border-x border-b border-[#E8E8E8] rounded-b-xl overflow-hidden bg-white">
-        <DataTable columns={columns} data={filteredBanners} pagination={true} />
+        {isLoading || isFetching ? (
+          <div className="flex items-center justify-center p-16">
+            <Loader2 className="h-6 w-6 animate-spin text-[#0f3453]" />
+          </div>
+        ) : banners.length === 0 ? (
+          <div className="flex flex-col items-center justify-center p-16 text-center">
+            <p className="text-base font-semibold text-slate-700">
+              No banners found
+            </p>
+            <p className="text-xs text-slate-500 mt-1">
+              Add your first homepage banner to showcase promotions.
+            </p>
+          </div>
+        ) : (
+          <DataTable columns={columns} data={banners} pagination={true} />
+        )}
       </div>
 
-      {/* 1. Add Banner CustomModal */}
       <CustomModal
         showCloseButton={false}
-        size="lg"
+        size="xsm"
         open={isAddModalOpen}
-        onOpenChange={setIsAddModalOpen}
+        onOpenChange={() => setIsAddModalOpen(false)}
       >
         <AddBanner
-          onCancel={() => {
-            setIsAddModalOpen(false);
-            setSelectedBanner(null);
-          }}
-          onSubmit={handleAddBanner}
+          onCancel={() => setIsAddModalOpen(false)}
+          onSubmit={handleCreateBanner}
         />
       </CustomModal>
 
-      {/* 2. Edit Banner CustomModal */}
       <CustomModal
         showCloseButton={false}
-        size="lg"
+        size="xsm"
         open={isEditModalOpen}
-        onOpenChange={setIsEditModalOpen}
+        onOpenChange={() => {
+          setIsEditModalOpen(false);
+          setSelectedBanner(null);
+        }}
       >
         <EditBanner
           initialData={selectedBanner}
@@ -388,19 +433,30 @@ export function HomePageBannerTab() {
             setIsEditModalOpen(false);
             setSelectedBanner(null);
           }}
-          onSubmit={handleEditBanner}
+          onSubmit={handleUpdateBanner}
         />
       </CustomModal>
 
-      {/* 3. Preview Banner CustomModal */}
       <CustomModal
         showCloseButton={false}
         size="xsm"
         open={isPreviewModalOpen}
-        onOpenChange={setIsPreviewModalOpen}
+        onOpenChange={() => {
+          setIsPreviewModalOpen(false);
+          setSelectedBanner(null);
+        }}
       >
         <PreviewBanner
-          banner={selectedBanner}
+          banner={
+            selectedBanner
+              ? {
+                  title: selectedBanner.title,
+                  subtitle: selectedBanner.subtitle,
+                  ctaText: selectedBanner.ctaText,
+                  image: selectedBanner.image,
+                }
+              : null
+          }
           onClose={() => {
             setIsPreviewModalOpen(false);
             setSelectedBanner(null);
@@ -408,42 +464,20 @@ export function HomePageBannerTab() {
         />
       </CustomModal>
 
-      {/* 4. Delete Confirmation CustomModal */}
       <CustomModal
         showCloseButton={false}
         size="xsm"
         open={isDeleteModalOpen}
-        onOpenChange={setIsDeleteModalOpen}
+        onOpenChange={() => setIsDeleteModalOpen(false)}
       >
         <DeleteAnnouncement
-          onCancel={() => {
-            setIsDeleteModalOpen(false);
-            setBannerToDelete(null);
-          }}
-          onConfirm={handleDeleteConfirm}
+          onCancel={() => setIsDeleteModalOpen(false)}
+          onConfirm={handleConfirmDelete}
+          isDeleting={isDeleting}
         />
       </CustomModal>
     </div>
   );
 }
 
-export default HomePageBannerTab;
-
-const PlusIcon = () => {
-  return (
-    <svg
-      width="9"
-      height="9"
-      viewBox="0 0 9 9"
-      fill="none"
-      xmlns="http://www.w3.org/2000/svg"
-    >
-      <path
-        fillRule="evenodd"
-        clipRule="evenodd"
-        d="M5 0.5C5 0.223858 4.77614 0 4.5 0C4.22386 0 4 0.223858 4 0.5V4H0.5C0.223857 4 0 4.22386 0 4.5C0 4.77614 0.223857 5 0.5 5H4V8.5C4 8.77614 4.22386 9 4.5 9C4.77614 9 5 8.77614 5 8.5V5H8.5C8.77614 5 9 4.77614 9 4.5C9 4.22386 8.77614 4 8.5 4H5V0.5Z"
-        fill="white"
-      />
-    </svg>
-  );
-};
+export default HomepageBannerTab;

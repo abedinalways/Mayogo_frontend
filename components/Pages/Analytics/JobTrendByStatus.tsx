@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useMemo } from "react";
 import { ChevronDown, RotateCw } from "lucide-react";
 import {
   BarChart,
@@ -11,6 +11,8 @@ import {
   Tooltip,
   ResponsiveContainer,
 } from "recharts";
+import { useGetJobTrendQuery } from "@/lib/redux/api/analyticsApi";
+import { AnalyticsTimeframe } from "@/types/analytics.types";
 
 interface JobStatusData {
   month: string;
@@ -19,7 +21,7 @@ interface JobStatusData {
   disputed: number;
 }
 
-const data: JobStatusData[] = [
+const DEFAULT_DATA: JobStatusData[] = [
   { month: "Jan", completed: 350, active: 200, disputed: 40 },
   { month: "Feb", completed: 510, active: 110, disputed: 35 },
   { month: "Mar", completed: 420, active: 170, disputed: 30 },
@@ -28,19 +30,37 @@ const data: JobStatusData[] = [
   { month: "Jun", completed: 1400, active: 190, disputed: 60 },
 ];
 
+const TIME_RANGE_MAP: Record<string, AnalyticsTimeframe> = {
+  "Last 7 days": "last_7_days",
+  "Last 30 days": "last_30_days",
+  "Last 90 days": "last_90_days",
+  "Last 6 months": "last_6_months",
+  "Last 12 months": "last_12_months",
+};
+
 const TIME_RANGES = ["Last 7 days", "Last 30 days", "Last 90 days", "Last 6 months", "Last 12 months"];
 
-const CustomTooltip = ({ active, payload, label }: any) => {
+interface TooltipEntry {
+  dataKey?: string;
+  value?: number;
+}
+
+interface CustomTooltipProps {
+  active?: boolean;
+  payload?: TooltipEntry[];
+  label?: string;
+}
+
+const CustomTooltip = ({ active, payload, label }: CustomTooltipProps) => {
   if (active && payload && payload.length) {
-    // Collect data for each status
     let completedVal = 0;
     let activeVal = 0;
     let disputedVal = 0;
 
-    payload.forEach((entry: any) => {
-      if (entry.dataKey === "completed") completedVal = entry.value;
-      if (entry.dataKey === "active") activeVal = entry.value;
-      if (entry.dataKey === "disputed") disputedVal = entry.value;
+    payload.forEach((entry) => {
+      if (entry.dataKey === "completed") completedVal = entry.value || 0;
+      if (entry.dataKey === "active") activeVal = entry.value || 0;
+      if (entry.dataKey === "disputed") disputedVal = entry.value || 0;
     });
 
     return (
@@ -64,9 +84,62 @@ const CustomTooltip = ({ active, payload, label }: any) => {
   return null;
 };
 
-export function JobTrendByStatus() {
+interface JobTrendByStatusProps {
+  timeframe?: AnalyticsTimeframe;
+}
+
+export function JobTrendByStatus({ timeframe: parentTimeframe }: JobTrendByStatusProps) {
   const [timeRange, setTimeRange] = useState("Last 6 months");
   const [dropdownOpen, setDropdownOpen] = useState(false);
+
+  React.useEffect(() => {
+    if (parentTimeframe) {
+      const matched = Object.keys(TIME_RANGE_MAP).find(
+        (key) => TIME_RANGE_MAP[key] === parentTimeframe
+      );
+      if (matched) {
+        setTimeRange(matched);
+      }
+    }
+  }, [parentTimeframe]);
+
+  const activeTimeframe = TIME_RANGE_MAP[timeRange] || parentTimeframe || "last_6_months";
+
+  const {
+    data: apiResponse,
+    isFetching,
+    refetch,
+  } = useGetJobTrendQuery({ timeframe: activeTimeframe });
+
+  const chartData = useMemo<JobStatusData[]>(() => {
+    const rawList = Array.isArray(apiResponse)
+      ? apiResponse
+      : apiResponse?.trend || apiResponse?.items || apiResponse?.data || [];
+
+    if (!rawList || rawList.length === 0) {
+      return DEFAULT_DATA;
+    }
+
+    return rawList.map((item) => ({
+      month: String(item.month || ""),
+      completed: Number(item.completed || 0),
+      active: Number(item.active || 0),
+      disputed: Number(item.disputed || 0),
+    }));
+  }, [apiResponse]);
+
+  const maxStacked = useMemo(() => {
+    const highest = Math.max(
+      ...chartData.map((d) => d.completed + d.active + d.disputed),
+      700
+    );
+    return Math.ceil(highest / 350) * 350;
+  }, [chartData]);
+
+  const ticks = useMemo(() => {
+    const step = maxStacked / 4;
+    return [0, step, step * 2, step * 3, maxStacked];
+  }, [maxStacked]);
 
   return (
     <div className="card-container">
@@ -115,10 +188,12 @@ export function JobTrendByStatus() {
           {/* Refresh Button */}
           <button
             type="button"
+            onClick={() => refetch()}
             className="flex h-8 w-8 items-center justify-center rounded-lg border border-slate-200 bg-white text-amber-500 hover:bg-slate-50 transition-colors cursor-pointer"
             aria-label="Refresh data"
+            title="Refresh Job Trend"
           >
-            <RotateCw className="h-3.5 w-3.5 text-amber-500" />
+            <RotateCw className={`h-3.5 w-3.5 text-amber-500 ${isFetching ? "animate-spin" : ""}`} />
           </button>
         </div>
       </div>
@@ -127,7 +202,7 @@ export function JobTrendByStatus() {
       <div className="mt-6 h-[280px] w-full">
         <ResponsiveContainer width="100%" height="100%">
           <BarChart
-            data={data}
+            data={chartData}
             margin={{ top: 10, right: 10, left: -15, bottom: 0 }}
           >
             <CartesianGrid
@@ -139,8 +214,8 @@ export function JobTrendByStatus() {
               axisLine={false}
               tickLine={false}
               tick={{ fill: "#8a9bab", fontSize: 12 }}
-              domain={[0, 2800]}
-              ticks={[0, 350, 700, 1400, 2800]}
+              domain={[0, maxStacked]}
+              ticks={ticks}
             />
             <XAxis
               dataKey="month"

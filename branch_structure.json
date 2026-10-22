@@ -1,0 +1,33 @@
+{
+  "default_branch": "main",
+  "branches": [
+    "development",
+    "feature/api-admin-users",
+    "feature/api-content",
+    "feature/api-integration",
+    "feature/api-roles",
+    "main",
+    "origin",
+    "refactor/auth"
+  ],
+  "parent": {
+    "development": "main",
+    "feature/api-admin-users": "main",
+    "feature/api-content": "main",
+    "feature/api-integration": "main",
+    "feature/api-roles": "main",
+    "main": null,
+    "origin": "main",
+    "refactor/auth": "main"
+  },
+  "order": [
+    "main",
+    "development",
+    "feature/api-admin-users",
+    "feature/api-content",
+    "feature/api-integration",
+    "feature/api-roles",
+    "origin",
+    "refactor/auth"
+  ]
+}

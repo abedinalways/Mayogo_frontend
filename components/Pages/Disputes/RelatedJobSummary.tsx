@@ -1,11 +1,14 @@
 "use client";
 
 import React, { useState } from "react";
+import Link from "next/link";
 
 export interface UserProfile {
   name: string;
   id: string;
   avatarUrl: string;
+  profileId?: string;
+  role?: "client" | "expert";
 }
 
 export interface RelatedJobSummaryProps {
@@ -23,12 +26,14 @@ export default function RelatedJobSummary({
   client = {
     name: "Sarah William",
     id: "Client ID #CET001",
-    avatarUrl: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150&auto=format&fit=crop&q=80",
+    avatarUrl:
+      "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150&auto=format&fit=crop&q=80",
   },
   expert = {
     name: "Daniel Green",
     id: "Expert ID #EXP001",
-    avatarUrl: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&auto=format&fit=crop&q=80",
+    avatarUrl:
+      "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&auto=format&fit=crop&q=80",
   },
   scopeOfWork = "Inspect the AC unit, identify the cause of poor cooling performance, replace faulty components if required, and ensure the system is operating normally after repair.",
   agreedQuote = "$500.00",
@@ -39,7 +44,6 @@ export default function RelatedJobSummary({
 
   return (
     <div className="w-full p-4 bg-white rounded-xl shadow-xs border border-slate-200 flex flex-col gap-5 font-['Manrope']">
-      {/* Card Header */}
       <div className="flex items-center justify-between">
         <h2 className="text-xl font-semibold text-[#0a3558] leading-5">
           Related Job Summary
@@ -50,46 +54,83 @@ export default function RelatedJobSummary({
         </div>
       </div>
 
-      {/* Main Content */}
       <div className="flex flex-col gap-5">
-        {/* User Profiles Stack */}
         <div className="flex flex-col gap-3">
-          {/* Client Info */}
-          <div className="flex items-center gap-3">
-            <img
-              src={client.avatarUrl}
-              alt={client.name}
-              className="h-10 w-10 rounded-full object-cover border border-amber-400"
-            />
-            <div className="flex flex-col">
-              <span className="text-base font-semibold text-[#0a3558] leading-4">
-                {client.name}
-              </span>
-              <span className="text-sm font-normal text-slate-500 leading-5">
-                {client.id}
-              </span>
+          {client.profileId ? (
+            <Link
+              href={`/dashboard/clients/${client.profileId}`}
+              className="flex items-center gap-3 hover:bg-slate-50 p-1.5 rounded-lg transition-colors group"
+            >
+              <img
+                src={client.avatarUrl}
+                alt={client.name}
+                className="h-10 w-10 rounded-full object-cover border border-amber-400"
+              />
+              <div className="flex flex-col">
+                <span className="text-base font-semibold text-[#0a3558] group-hover:underline leading-4">
+                  {client.name}
+                </span>
+                <span className="text-sm font-normal text-slate-500 leading-5">
+                  {client.id}
+                </span>
+              </div>
+            </Link>
+          ) : (
+            <div className="flex items-center gap-3 p-1.5">
+              <img
+                src={client.avatarUrl}
+                alt={client.name}
+                className="h-10 w-10 rounded-full object-cover border border-amber-400"
+              />
+              <div className="flex flex-col">
+                <span className="text-base font-semibold text-[#0a3558] leading-4">
+                  {client.name}
+                </span>
+                <span className="text-sm font-normal text-slate-500 leading-5">
+                  {client.id}
+                </span>
+              </div>
             </div>
-          </div>
+          )}
 
-          {/* Expert Info */}
-          <div className="flex items-center gap-3">
-            <img
-              src={expert.avatarUrl}
-              alt={expert.name}
-              className="h-10 w-10 rounded-full object-cover border border-amber-400"
-            />
-            <div className="flex flex-col">
-              <span className="text-base font-semibold text-[#0a3558] leading-4">
-                {expert.name}
-              </span>
-              <span className="text-sm font-normal text-slate-500 leading-5">
-                {expert.id}
-              </span>
+          {expert.profileId ? (
+            <Link
+              href={`/dashboard/experts/${expert.profileId}`}
+              className="flex items-center gap-3 hover:bg-slate-50 p-1.5 rounded-lg transition-colors group"
+            >
+              <img
+                src={expert.avatarUrl}
+                alt={expert.name}
+                className="h-10 w-10 rounded-full object-cover border border-amber-400"
+              />
+              <div className="flex flex-col">
+                <span className="text-base font-semibold text-[#0a3558] group-hover:underline leading-4">
+                  {expert.name}
+                </span>
+                <span className="text-sm font-normal text-slate-500 leading-5">
+                  {expert.id}
+                </span>
+              </div>
+            </Link>
+          ) : (
+            <div className="flex items-center gap-3 p-1.5">
+              <img
+                src={expert.avatarUrl}
+                alt={expert.name}
+                className="h-10 w-10 rounded-full object-cover border border-amber-400"
+              />
+              <div className="flex flex-col">
+                <span className="text-base font-semibold text-[#0a3558] leading-4">
+                  {expert.name}
+                </span>
+                <span className="text-sm font-normal text-slate-500 leading-5">
+                  {expert.id}
+                </span>
+              </div>
             </div>
-          </div>
+          )}
         </div>
 
-        {/* Scope of Work Section */}
         <div className="flex flex-col gap-4">
           <div className="flex flex-col gap-1">
             <span className="text-sm font-normal text-slate-500 leading-5">
@@ -100,9 +141,7 @@ export default function RelatedJobSummary({
             </p>
           </div>
 
-          {/* Key Details Grid */}
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 items-start pt-1">
-            {/* Quote */}
             <div className="flex flex-col gap-1">
               <span className="text-sm font-normal text-slate-500 leading-5">
                 Agreed Quote
@@ -112,7 +151,6 @@ export default function RelatedJobSummary({
               </span>
             </div>
 
-            {/* Duration */}
             <div className="flex flex-col gap-1">
               <span className="text-sm font-normal text-slate-500 leading-5">
                 Est. Duration
@@ -122,7 +160,6 @@ export default function RelatedJobSummary({
               </span>
             </div>
 
-            {/* Toggle Switch */}
             <div className="flex flex-col gap-1">
               <span className="text-sm font-normal text-slate-500 leading-5">
                 Before After Photo Presence

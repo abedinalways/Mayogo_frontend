@@ -83,100 +83,100 @@ export default function SetPassword() {
         <form onSubmit={handleSubmit} className="mt-8 space-y-4">
 
           {/* Current Password */}
-          <div className="relative">
-            <CustomInput
-              name="currentPassword"
-              label="Current Password"
-              type={showCurrentPassword ? "text" : "password"}
-              value={currentPassword}
-              onChange={(e) => {
-                setCurrentPassword(e.target.value);
-                setError("");
-              }}
-              className=" pl-10 pr-11 text-base"
-            />
-
-            <Lock
-              className="absolute left-4 top-11 h-4 w-4 text-[#707070]"
-              strokeWidth={1.5}
-            />
-
-            <button
-              type="button"
-              onClick={() => setShowCurrentPassword(!showCurrentPassword)}
-              className="absolute right-3 top-10.5 cursor-pointer p-1 text-[#707070]"
-            >
-              {showCurrentPassword ? (
-                <EyeOff className="h-4 w-4" />
-              ) : (
-                <Eye className="h-4 w-4" />
-              )}
-            </button>
-          </div>
+          <CustomInput
+            name="currentPassword"
+            label="Current Password"
+            type={showCurrentPassword ? "text" : "password"}
+            value={currentPassword}
+            onChange={(e) => {
+              setCurrentPassword(e.target.value);
+              setError("");
+            }}
+            className="text-base"
+            leftIcon={
+              <Lock
+                className="h-4 w-4 text-[#707070]"
+                strokeWidth={1.5}
+              />
+            }
+            rightIcon={
+              <button
+                type="button"
+                onClick={() => setShowCurrentPassword(!showCurrentPassword)}
+                className="cursor-pointer p-1 text-[#707070] hover:text-gray-800 focus:outline-none"
+              >
+                {showCurrentPassword ? (
+                  <EyeOff className="h-4 w-4" />
+                ) : (
+                  <Eye className="h-4 w-4" />
+                )}
+              </button>
+            }
+          />
 
           {/* New Password */}
-          <div className="relative">
-            <CustomInput
-              name="newPassword"
-              label="New Password"
-              type={showNewPassword ? "text" : "password"}
-              value={newPassword}
-              onChange={(e) => {
-                setNewPassword(e.target.value);
-                setError("");
-              }}
-              className=" pl-10 pr-11 text-base"
-            />
-
-            <Lock
-              className="absolute left-4 top-11 h-4 w-4 text-[#707070]"
-              strokeWidth={1.5}
-            />
-
-            <button
-              type="button"
-              onClick={() => setShowNewPassword(!showNewPassword)}
-              className="absolute right-3 top-10.5 cursor-pointer p-1 text-[#707070]"
-            >
-              {showNewPassword ? (
-                <EyeOff className="h-4 w-4" />
-              ) : (
-                <Eye className="h-4 w-4" />
-              )}
-            </button>
-          </div>
+          <CustomInput
+            name="newPassword"
+            label="New Password"
+            type={showNewPassword ? "text" : "password"}
+            value={newPassword}
+            onChange={(e) => {
+              setNewPassword(e.target.value);
+              setError("");
+            }}
+            className="text-base"
+            leftIcon={
+              <Lock
+                className="h-4 w-4 text-[#707070]"
+                strokeWidth={1.5}
+              />
+            }
+            rightIcon={
+              <button
+                type="button"
+                onClick={() => setShowNewPassword(!showNewPassword)}
+                className="cursor-pointer p-1 text-[#707070] hover:text-gray-800 focus:outline-none"
+              >
+                {showNewPassword ? (
+                  <EyeOff className="h-4 w-4" />
+                ) : (
+                  <Eye className="h-4 w-4" />
+                )}
+              </button>
+            }
+          />
 
           {/* Confirm Password */}
-          <div className="relative">
-            <CustomInput
-              name="confirmPassword"
-              label="Confirm Password"
-              type={showConfirmPassword ? "text" : "password"}
-              value={confirmPassword}
-              onChange={(e) => {
-                setConfirmPassword(e.target.value);
-                setError("");
-              }}
-              className=" pl-10 pr-11 text-base"
-            />
-
-            <Lock
-              className="absolute left-4 top-11 h-4 w-4 text-[#707070]"
-              strokeWidth={1.5}
-            />
-
-            <button
-              type="button"
-              onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-              className="absolute right-3 top-10.5 cursor-pointer p-1 text-[#707070]"
-            >
-              {showConfirmPassword ? (
-                <EyeOff className="h-4 w-4" />
-              ) : (
-                <Eye className="h-4 w-4" />
-              )}
-            </button>
-          </div>
+          <CustomInput
+            name="confirmPassword"
+            label="Confirm Password"
+            type={showConfirmPassword ? "text" : "password"}
+            value={confirmPassword}
+            onChange={(e) => {
+              setConfirmPassword(e.target.value);
+              setError("");
+            }}
+            className="text-base"
+            leftIcon={
+              <Lock
+                className="h-4 w-4 text-[#707070]"
+                strokeWidth={1.5}
+              />
+            }
+            rightIcon={
+              <button
+                type="button"
+                onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                className="cursor-pointer p-1 text-[#707070] hover:text-gray-800 focus:outline-none"
+              >
+                {showConfirmPassword ? (
+                  <EyeOff className="h-4 w-4" />
+                ) : (
+                  <Eye className="h-4 w-4" />
+                )}
+              </button>
+            }
+          />
 
           {error && (
             <p className="text-sm text-red-500">

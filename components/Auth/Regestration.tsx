@@ -64,91 +64,85 @@ export default function Regestration() {
             <p className="mt-1 text-center text-[14px] leading-[160%] text-[#5A5A5A]">Please register by filling your data</p>
 
             <form onSubmit={handleSubmit} className="mt-6 space-y-3">
-              <div className="relative">
-                <CustomInput name="fullName"
-                 label="Full Name"
-                  placeholder="Enter your full name"
-                   value={formData.fullName}
-                    onChange={handleChange} 
-                    className=" py-2 pl-9" />
+              <CustomInput
+                name="fullName"
+                label="Full Name"
+                placeholder="Enter your full name"
+                value={formData.fullName}
+                onChange={handleChange}
+                className="py-2"
+                leftIcon={<CiUser className="h-4 w-4 text-[#707070]" />}
+              />
 
-                <CiUser className="absolute left-3 top-11 h-4 w-4 text-[#707070]" strokeWidth={1.5} />
-
-              </div>
-
-              <div className="relative">
-                <CustomInput name="email" 
-                type="email" label="Email"
+              <CustomInput
+                name="email"
+                type="email"
+                label="Email"
                 placeholder="Enter your email"
-                 value={formData.email} onChange={handleChange} 
-                 className=" py-2 pl-9" />
-                <Mail className="absolute left-3 top-11 h-4 w-4 text-[#707070]" strokeWidth={1.5} />
+                value={formData.email}
+                onChange={handleChange}
+                className="py-2"
+                leftIcon={<Mail className="h-4 w-4 text-[#707070]" strokeWidth={1.5} />}
+              />
+
+              {/* Password + Confirm Password */}
+              <div className="space-y-3">
+                {/* Password Field */}
+                <CustomInput
+                  name="password"
+                  type={visibleFields.password ? "text" : "password"}
+                  label="Password"
+                  placeholder="Enter your password"
+                  value={formData.password}
+                  onChange={handleChange}
+                  className="py-2"
+                  leftIcon={<Lock className="h-4 w-4 text-[#707070]" strokeWidth={1.5} />}
+                  rightIcon={
+                    <button
+                      type="button"
+                      aria-label={visibleFields.password ? "Hide password" : "Show password"}
+                      onClick={() => toggleVisibility("password")}
+                      className="cursor-pointer p-1 text-[#707070] hover:text-gray-800 focus:outline-none"
+                    >
+                      {visibleFields.password ? (
+                        <EyeOff className="h-4 w-4" />
+                      ) : (
+                        <Eye className="h-4 w-4" />
+                      )}
+                    </button>
+                  }
+                />
+
+                {/* Confirm Password Field */}
+                <CustomInput
+                  name="confirmPassword"
+                  type={visibleFields.confirmPassword ? "text" : "password"}
+                  label="Confirm Password"
+                  placeholder="Enter your confirmed password"
+                  value={formData.confirmPassword}
+                  onChange={handleChange}
+                  className="py-2"
+                  leftIcon={<Lock className="h-4 w-4 text-[#707070]" strokeWidth={1.5} />}
+                  rightIcon={
+                    <button
+                      type="button"
+                      aria-label={
+                        visibleFields.confirmPassword
+                          ? "Hide confirm password"
+                          : "Show confirm password"
+                      }
+                      onClick={() => toggleVisibility("confirmPassword")}
+                      className="cursor-pointer p-1 text-[#707070] hover:text-gray-800 focus:outline-none"
+                    >
+                      {visibleFields.confirmPassword ? (
+                        <EyeOff className="h-4 w-4" />
+                      ) : (
+                        <Eye className="h-4 w-4" />
+                      )}
+                    </button>
+                  }
+                />
               </div>
-
-             {/* Password + Confirm Password - Side by Side */}
-<div className="">
-  {/* Password Field */}
-  <div className="relative">
-    <CustomInput
-      name="password"
-      type={visibleFields.password ? "text" : "password"}
-      label="Password"
-      placeholder="Enter your password"
-      value={formData.password}
-      onChange={handleChange}
-      className="py-2 pl-9 pr-10"
-    />
-    <Lock
-      className="absolute left-3 top-11 h-4 w-4 text-[#707070]"
-      strokeWidth={1.5}
-    />
-    <button
-      type="button"
-      aria-label={visibleFields.password ? "Hide password" : "Show password"}
-      onClick={() => toggleVisibility("password")}
-      className="absolute right-3 -mt-9.5 cursor-pointer p-1 text-[#707070]"
-    >
-      {visibleFields.password ? (
-        <EyeOff className="h-4 w-4" />
-      ) : (
-        <Eye className="h-4 w-4" />
-      )}
-    </button>
-  </div>
-
-  {/* Confirm Password Field */}
-  <div className="relative mt-4">
-    <CustomInput
-      name="confirmPassword"
-      type={visibleFields.confirmPassword ? "text" : "password"}
-      label="Confirm Password"
-      placeholder="Enter your confirmed password"
-      value={formData.confirmPassword}
-      onChange={handleChange}
-      className="py-2 pl-9 pr-10"
-    />
-    <Lock
-      className="absolute left-3 top-11 h-4 w-4 text-[#707070]"
-      strokeWidth={1.5}
-    />
-    <button
-      type="button"
-      aria-label={
-        visibleFields.confirmPassword
-          ? "Hide confirm password"
-          : "Show confirm password"
-      }
-      onClick={() => toggleVisibility("confirmPassword")}
-      className="absolute right-3 -mt-9.5 cursor-pointer p-1 text-[#707070]"
-    >
-      {visibleFields.confirmPassword ? (
-        <EyeOff className="h-4 w-4" />
-      ) : (
-        <Eye className="h-4 w-4" />
-      )}
-    </button>
-  </div>
-</div>
 
               <label className="flex items-start gap-1.5 pt-1 text-[12px] leading-[160%] text-[#5A5A5A]">
                 <input type="checkbox" name="terms" checked={formData.terms} onChange={handleChange} className="mt-0.5 h-3 w-3 accent-[#103D5C]" />

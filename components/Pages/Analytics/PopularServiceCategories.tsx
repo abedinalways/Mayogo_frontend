@@ -1,6 +1,8 @@
 "use client";
 
-import React from "react";
+import React, { useMemo } from "react";
+import { useGetPopularCategoriesQuery } from "@/lib/redux/api/analyticsApi";
+import { AnalyticsTimeframe } from "@/types/analytics.types";
 
 export interface CategoryProgressItem {
   id: string;
@@ -13,6 +15,7 @@ export interface PopularServiceCategoriesProps {
   title?: string;
   items?: CategoryProgressItem[];
   className?: string;
+  timeframe?: AnalyticsTimeframe;
 }
 
 const DEFAULT_CATEGORIES: CategoryProgressItem[] = [
@@ -48,40 +51,95 @@ const DEFAULT_CATEGORIES: CategoryProgressItem[] = [
   },
 ];
 
+const COLOR_CLASSES = [
+  "bg-[#00875A]",
+  "bg-[#0065FF]",
+  "bg-[#E7398B]",
+  "bg-[#7E57C2]",
+  "bg-[#F5A623]",
+  "bg-[#06B6D4]",
+  "bg-[#103D5C]",
+];
+
 export function PopularServiceCategories({
   title = "Popular Service Categories",
-  items = DEFAULT_CATEGORIES,
+  items: propItems,
   className = "",
+  timeframe = "last_30_days",
 }: PopularServiceCategoriesProps) {
+  const { data: apiResponse, isLoading } = useGetPopularCategoriesQuery({
+    timeframe,
+    limit: 5,
+  });
+
+  const displayItems = useMemo<CategoryProgressItem[]>(() => {
+    if (propItems && propItems.length > 0) {
+      return propItems;
+    }
+
+    const rawList = Array.isArray(apiResponse)
+      ? apiResponse
+      : apiResponse?.categories || apiResponse?.items || apiResponse?.data || [];
+
+    if (!rawList || rawList.length === 0) {
+      return DEFAULT_CATEGORIES;
+    }
+
+    return rawList.map((item, index) => {
+      const name = item.name || item.categoryName || `Category ${index + 1}`;
+      const pct = Math.round(
+        Number(item.percentage ?? item.share ?? item.demandPercentage ?? 0)
+      );
+      const colorClass =
+        item.colorClass || COLOR_CLASSES[index % COLOR_CLASSES.length];
+      const id = item.id || `category-${index}`;
+
+      return {
+        id,
+        name,
+        percentage: pct,
+        colorClass,
+      };
+    });
+  }, [propItems, apiResponse]);
+
   return (
     <div
-      className={`w-full  rounded-2xl bg-white p-5 font-['Manrope'] shadow-[0px_2px_4px_-1px_rgba(13,13,18,0.06)] outline outline-1 outline-offset-[-1px] outline-slate-200 ${className}`}
+      className={`w-full rounded-2xl bg-white p-5 font-['Manrope'] shadow-[0px_2px_4px_-1px_rgba(13,13,18,0.06)] outline outline-1 outline-offset-[-1px] outline-slate-200 ${className}`}
     >
       <div className="border-b border-slate-100 pb-4">
         <h2 className="text-lg font-semibold text-[#103D5C]">{title}</h2>
       </div>
 
       <div className="flex flex-col gap-5 pt-5">
-        {items.map((item) => (
-          <div key={item.id} className="flex items-center gap-6">
-            <span className="w-44 text-sm font-medium text-[#103D5C]">
-              {item.name}
-            </span>
-
-            <div className="flex flex-1 items-center gap-4">
-              <div className="relative h-3.5 flex-1 overflow-hidden rounded-full bg-slate-100">
-                <div
-                  className={`h-full rounded-full transition-all duration-500 ease-out ${item.colorClass}`}
-                  style={{ width: `${Math.min(Math.max(item.percentage, 0), 100)}%` }}
-                />
-              </div>
-
-              <span className="w-10 text-right text-sm font-medium text-slate-500">
-                {item.percentage}%
-              </span>
-            </div>
+        {isLoading && (!displayItems || displayItems.length === 0) ? (
+          <div className="space-y-4 animate-pulse">
+            {[1, 2, 3, 4, 5].map((i) => (
+              <div key={i} className="h-6 bg-slate-100 rounded" />
+            ))}
           </div>
-        ))}
+        ) : (
+          displayItems.map((item) => (
+            <div key={item.id} className="flex items-center gap-6">
+              <span className="w-44 text-sm font-medium text-[#103D5C] truncate" title={item.name}>
+                {item.name}
+              </span>
+
+              <div className="flex flex-1 items-center gap-4">
+                <div className="relative h-3.5 flex-1 overflow-hidden rounded-full bg-slate-100">
+                  <div
+                    className={`h-full rounded-full transition-all duration-500 ease-out ${item.colorClass}`}
+                    style={{ width: `${Math.min(Math.max(item.percentage, 0), 100)}%` }}
+                  />
+                </div>
+
+                <span className="w-10 text-right text-sm font-medium text-slate-500">
+                  {item.percentage}%
+                </span>
+              </div>
+            </div>
+          ))
+        )}
       </div>
     </div>
   );

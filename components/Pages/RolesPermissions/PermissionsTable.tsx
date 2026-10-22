@@ -9,6 +9,9 @@ export interface PermissionRow {
   view: boolean;
   manage: boolean;
   allowAll: boolean;
+  viewPermId?: string;
+  managePermId?: string;
+  allowAllPermId?: string;
 }
 
 export interface ModuleGroup {
@@ -31,7 +34,7 @@ export function PermissionsTable({
   onTogglePermission,
 }: PermissionsTableProps) {
   return (
-    <div className="w-full overflow-x-auto  font-['Manrope']">
+    <div className="w-full overflow-x-auto font-['Manrope']">
       <table className="w-full border-collapse text-left">
         <thead>
           <tr className="bg-[#F8FAFC] text-[#64748B] text-xs font-semibold border-b border-[#E4EBF1]">
@@ -53,7 +56,6 @@ export function PermissionsTable({
                   key={sub.id}
                   className="hover:bg-slate-50/50 transition-colors text-sm"
                 >
-                  {/* Rowspan Module Sl No and Name */}
                   {isFirstRowOfModule ? (
                     <>
                       <td
@@ -71,12 +73,10 @@ export function PermissionsTable({
                     </>
                   ) : null}
 
-                  {/* Submodule Title */}
                   <td className="py-3.5 px-4 text-slate-700 font-medium">
                     {sub.submodule}
                   </td>
 
-                  {/* Checkboxes */}
                   <td className="py-3.5 px-4 text-center">
                     <CustomAmberCheckbox
                       checked={sub.view}

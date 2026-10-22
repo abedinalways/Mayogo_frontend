@@ -1,39 +1,75 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { usePathname } from "next/navigation";
 import { ChevronDown } from "lucide-react";
 import { SidebarMenuItem } from "./SidebarMenuItem";
-import { getActiveNavItem, isPathActive, navSections } from "./nav-config";
-
-function getOpenSections(pathname: string) {
-  return Object.fromEntries(
-    navSections.map((section) => [
-      section.title,
-      section.items.some((item) => isPathActive(pathname, item.href)),
-    ]),
-  );
-}
+import { SidebarSkeleton } from "./SidebarSkeleton";
+import { getActiveNavItem, isPathActive, navSections, NavSection } from "./nav-config";
+import { usePermission } from "@/lib/permissions";
+import { useAppSelector } from "@/lib/redux/hooks";
+import {
+  selectCurrentUser,
+  selectIsAuthenticated,
+  selectAuthLoading,
+} from "@/lib/redux/features/auth/authSlice";
+import { useGetProfileQuery } from "@/lib/redux/api/authApi";
 
 export function SidebarMenu({ onNavigate }: { onNavigate?: () => void }) {
+  const [isMounted, setIsMounted] = useState(false);
   const pathname = usePathname();
+  const isAuthenticated = useAppSelector(selectIsAuthenticated);
+  const currentUser = useAppSelector(selectCurrentUser);
+  const authLoading = useAppSelector(selectAuthLoading);
+
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
+
+  const { isError: isProfileError } = useGetProfileQuery(undefined, {
+    skip: !isAuthenticated,
+  });
+
+  const { isSuperAdmin, can } = usePermission();
+
+  // Filter sections and items dynamically according to user permissions
+  const filteredSections: NavSection[] = useMemo(() => {
+    return navSections
+      .map((section) => {
+        const visibleItems = section.items.filter((item) => {
+          if (item.superAdminOnly && !isSuperAdmin) return false;
+          if (item.permission && !can(item.permission)) return false;
+          return true;
+        });
+
+        return {
+          ...section,
+          items: visibleItems,
+        };
+      })
+      .filter((section) => section.items.length > 0);
+  }, [isSuperAdmin, can]);
+
   const activeHref = getActiveNavItem(pathname)?.href;
   const [trackedPath, setTrackedPath] = useState(pathname);
-  const [openSections, setOpenSections] = useState(() =>
-    getOpenSections(pathname),
-  );
+  const [openSections, setOpenSections] = useState<Record<string, boolean>>(() => {
+    return Object.fromEntries(
+      navSections.map((section) => [
+        section.title,
+        section.items.some((item) => isPathActive(pathname, item.href)),
+      ])
+    );
+  });
 
   if (trackedPath !== pathname) {
     setTrackedPath(pathname);
     setOpenSections((prev) => {
       const next = { ...prev };
-
-      for (const section of navSections) {
+      for (const section of filteredSections) {
         if (section.items.some((item) => isPathActive(pathname, item.href))) {
           next[section.title] = true;
         }
       }
-
       return next;
     });
   }
@@ -45,9 +81,18 @@ export function SidebarMenu({ onNavigate }: { onNavigate?: () => void }) {
     }));
   };
 
+  const isInitialLoading =
+    !isMounted ||
+    authLoading ||
+    (isAuthenticated && !currentUser && !isProfileError);
+
+  if (isInitialLoading) {
+    return <SidebarSkeleton />;
+  }
+
   return (
     <nav className="flex-1 space-y-1 overflow-y-auto px-4 pb-6">
-      {navSections.map((section) => {
+      {filteredSections.map((section) => {
         const isOpen = Boolean(openSections[section.title]);
 
         return (

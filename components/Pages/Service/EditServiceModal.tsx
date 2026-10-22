@@ -1,30 +1,24 @@
 "use client";
 
 import React, { useRef, useState, useEffect } from "react";
-import { UploadCloud } from "lucide-react";
+import { UploadCloud, Loader2 } from "lucide-react";
 import CustomModal from "@/components/shared/CustomModal";
 import { CustomInput } from "@/components/shared/CustomInput";
 import { CustomSelect } from "@/components/shared/CustomSelect";
 import CustomButton from "@/components/shared/CustomButton";
-import { CATEGORY_OPTIONS } from "./ServiceData";
-import type { ServiceRecord } from "./ServiceData";
+import { ServiceItem } from "@/types/category.types";
+import { useUpdateServiceMutation, useGetCategoriesQuery } from "@/lib/redux/api/categoryApi";
 
 interface EditServiceModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  service: ServiceRecord | null;
-  onSaved?: (data: {
-    id: string;
-    name: string;
-    category: string;
-    status: string;
-    image: File | null;
-  }) => void;
+  service: ServiceItem | null;
+  onSaved?: () => void;
 }
 
 const STATUS_OPTIONS = [
-  { label: "Active", value: "Active" },
-  { label: "Inactive", value: "Inactive" },
+  { label: "Active", value: "active" },
+  { label: "Inactive", value: "inactive" },
 ];
 
 export default function EditServiceModal({
@@ -34,21 +28,35 @@ export default function EditServiceModal({
   onSaved,
 }: EditServiceModalProps) {
   const [name, setName] = useState("");
-  const [category, setCategory] = useState("");
-  const [status, setStatus] = useState("Active");
-  const [image, setImage] = useState<File | null>(null);
+  const [description, setDescription] = useState("");
+  const [categoryId, setCategoryId] = useState("");
+  const [commission, setCommission] = useState("10");
+  const [status, setStatus] = useState("active");
   const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [imageUrl, setImageUrl] = useState<string | File>("");
   const [isDragging, setIsDragging] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // Pre-fill when a service is selected
+  const { data: categories } = useGetCategoriesQuery();
+  const [updateService, { isLoading }] = useUpdateServiceMutation();
+
+  const categoryOptions = (categories || []).map((c) => ({
+    label: c.name,
+    value: c.id,
+  }));
+
   useEffect(() => {
     if (service) {
-      setName(service.name);
-      setCategory(service.category);
-      setStatus(service.status ? "Active" : "Inactive");
-      setImagePreview(service.image);
-      setImage(null);
+      setName(service.name || "");
+      setDescription(service.description || "");
+      const catId = typeof service.category === "object" ? service.category?.id : service.categoryId;
+      const matchedCat = (categories || []).find((c) => c.name === service.category || c.id === service.categoryId);
+      setCategoryId(catId || matchedCat?.id || service.categoryId || "");
+      const rawComm = String(service.commission ?? "10").replace("%", "");
+      setCommission(rawComm || "10");
+      setStatus(service.isActive ? "active" : "inactive");
+      setImagePreview(service.imageUrl || service.image || null);
+      setImageUrl(service.imageUrl || service.image || "");
     }
   }, [service]);
 
@@ -58,9 +66,12 @@ export default function EditServiceModal({
 
   const handleFile = (file: File) => {
     if (!file.type.match(/image\/(jpeg|png|gif|webp)/)) return;
-    setImage(file);
+    setImageUrl(file);
     const reader = new FileReader();
-    reader.onload = (e) => setImagePreview(e.target?.result as string);
+    reader.onload = (e) => {
+      const result = e.target?.result as string;
+      setImagePreview(result);
+    };
     reader.readAsDataURL(file);
   };
 
@@ -71,10 +82,33 @@ export default function EditServiceModal({
     if (file) handleFile(file);
   };
 
-  const handleSubmit = () => {
-    if (!service) return;
-    onSaved?.({ id: service.id, name, category, status, image });
-    handleClose(false);
+  const handleSubmit = async () => {
+    if (!service || !name.trim()) return;
+
+    try {
+      const formData = new FormData();
+      formData.append("name", name.trim());
+      if (description.trim()) {
+        formData.append("description", description.trim());
+      }
+      if (categoryId) {
+        formData.append("categoryId", categoryId);
+      }
+      formData.append("commission", String(parseFloat(commission) || 10));
+      formData.append("isActive", String(status === "active"));
+      if (imageUrl instanceof File) {
+        formData.append("imageUrl", imageUrl);
+      } else if (typeof imageUrl === "string" && imageUrl) {
+        formData.append("imageUrl", imageUrl);
+      }
+
+      await updateService({ id: service.id, formData }).unwrap();
+
+      onSaved?.();
+      handleClose(false);
+    } catch {
+      // handled via mutation state
+    }
   };
 
   if (!service) return null;
@@ -87,8 +121,7 @@ export default function EditServiceModal({
       size="xsm"
       showCloseButton
     >
-      <div className="space-y-4">
-        {/* Service Name */}
+      <div className="space-y-4 font-['Manrope']">
         <CustomInput
           label="Service Name"
           placeholder="e.g Wall Painting"
@@ -96,16 +129,35 @@ export default function EditServiceModal({
           onChange={(e) => setName(e.target.value)}
         />
 
-        {/* Category */}
+        <div className="space-y-1.5">
+          <label className="text-sm font-normal text-slate-600 leading-6">
+            Description
+          </label>
+          <textarea
+            rows={2}
+            value={description}
+            onChange={(e) => setDescription(e.target.value)}
+            placeholder="Brief service description..."
+            className="w-full p-2.5 text-xs rounded-lg border border-slate-200 outline-none focus:border-[#0a3558] resize-none"
+          />
+        </div>
+
         <CustomSelect
           label="Category"
           placeholder="Select category"
-          options={CATEGORY_OPTIONS.filter((o) => o.value !== "")}
-          value={category}
-          onValueChange={setCategory}
+          options={categoryOptions}
+          value={categoryId}
+          onValueChange={setCategoryId}
         />
 
-        {/* Status */}
+        <CustomInput
+          label="Commission (%)"
+          type="number"
+          placeholder="10"
+          value={commission}
+          onChange={(e) => setCommission(e.target.value)}
+        />
+
         <CustomSelect
           label="Status"
           options={STATUS_OPTIONS}
@@ -113,7 +165,6 @@ export default function EditServiceModal({
           onValueChange={setStatus}
         />
 
-        {/* Service Image */}
         <div className="space-y-1.5">
           <p className="text-sm font-normal text-slate-600 leading-6 font-['Manrope']">
             Service Image
@@ -153,7 +204,7 @@ export default function EditServiceModal({
                   <span className="font-semibold text-amber-500">Browse</span>
                 </p>
                 <p className="text-xs text-slate-400 font-['Manrope']">
-                  JPG, PNG or PDF (Max 5MB)
+                  JPG, PNG or WEBP (Max 5MB)
                 </p>
               </>
             )}
@@ -170,7 +221,6 @@ export default function EditServiceModal({
           />
         </div>
 
-        {/* Actions */}
         <div className="grid grid-cols-2 gap-3 pt-1">
           <CustomButton
             variant="tertiary"
@@ -183,11 +233,12 @@ export default function EditServiceModal({
           <CustomButton
             variant="primary"
             size="md"
-            className="w-full"
+            className="w-full flex items-center justify-center gap-2"
             onClick={handleSubmit}
-            disabled={!name || !category}
+            disabled={isLoading || !name.trim()}
           >
-            Save Changes
+            {isLoading && <Loader2 className="h-4 w-4 animate-spin text-white" />}
+            <span>Save Changes</span>
           </CustomButton>
         </div>
       </div>

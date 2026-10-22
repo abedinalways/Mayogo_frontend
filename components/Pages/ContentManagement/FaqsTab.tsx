@@ -9,9 +9,16 @@ import EditIcon from "@/components/Icons/EditIcon";
 import DeleteIcon from "@/components/Icons/DeleteIcon";
 import FaqAdd, { FaqFormData } from "./ContentManagementAllModal/FaqAdd";
 import DeleteFaq from "./ContentManagementAllModal/DeleteFaq";
-import { PlusIcon } from "lucide-react";
+import { PlusIcon, Loader2 } from "lucide-react";
+import {
+  useGetFaqsQuery,
+  useCreateFaqMutation,
+  useUpdateFaqMutation,
+  useDeleteFaqMutation,
+} from "@/lib/redux/api/contentApi";
+import { FaqItem } from "@/types/content.types";
 
-export interface UserRecord {
+export interface FaqRecord {
   id: string;
   title: string;
   description: string;
@@ -19,61 +26,21 @@ export interface UserRecord {
   status: string;
 }
 
-export type FaqRecord = UserRecord;
-
-const sampleFaqs: UserRecord[] = [
-  {
-    id: "1",
-    title: "How do I hire an expert?",
-    description:
-      "Search or post a job, review the quotes you receive, then accept the expert that fits you needs and pay securely in-app.",
-    latestdDate: "12 Jul, 2026",
-    status: "Draft",
-  },
-  {
-    id: "2",
-    title: "When is my payment released?",
-    description:
-      "Payments are held securely and only released to the expert once you confirm the job is complete.",
-    latestdDate: "10 Jun, 2026",
-    status: "Live",
-  },
-  {
-    id: "3",
-    title: "Can I get a refund?",
-    description:
-      "Yes. If a job is cancelled or not completed as agreed, your funds will be refunded.",
-    latestdDate: "10 Jun, 2026",
-    status: "Live",
-  },
-];
-
 const StatusBadge = ({ status }: { status: string }) => {
-  const config = {
-    Live: {
-      bg: "bg-sky-50",
-      border: "outline-sky-200",
-      text: "text-[#0777F6]",
-      dot: "bg-[#0777F6]",
-    },
-    Draft: {
-      bg: "bg-[#FEF4DC]",
-      border: "outline-[#F8B500]",
-      text: "text-[#F8B500]",
-      dot: "bg-[#F8B500]",
-    },
-    Suspended: {
-      bg: "bg-rose-50",
-      border: "outline-rose-200",
-      text: "text-rose-600",
-      dot: "bg-rose-500",
-    },
-  }[status] ?? {
-    bg: "bg-slate-50",
-    border: "outline-slate-200",
-    text: "text-slate-600",
-    dot: "bg-slate-400",
-  };
+  const isLive = status.toLowerCase() === "live";
+  const config = isLive
+    ? {
+        bg: "bg-sky-50",
+        border: "outline-sky-200",
+        text: "text-[#0777F6]",
+        dot: "bg-[#0777F6]",
+      }
+    : {
+        bg: "bg-[#FEF4DC]",
+        border: "outline-[#F8B500]",
+        text: "text-[#F8B500]",
+        dot: "bg-[#F8B500]",
+      };
 
   return (
     <div
@@ -83,27 +50,52 @@ const StatusBadge = ({ status }: { status: string }) => {
       <span
         className={`font-['Manrope'] text-xs font-medium leading-4 ${config.text}`}
       >
-        {status}
+        {isLive ? "Live" : "Draft"}
       </span>
     </div>
   );
 };
 
 export function FaqsTab() {
-  const [faqs, setFaqs] = useState<UserRecord[]>(sampleFaqs);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
 
-  // Modal states
+  const {
+    data: rawFaqs = [],
+    isLoading,
+    isFetching,
+  } = useGetFaqsQuery({
+    search: searchTerm || undefined,
+    status: statusFilter ? statusFilter.toUpperCase() : undefined,
+  });
+
+  const [createFaq, { isLoading: isCreating }] = useCreateFaqMutation();
+  const [updateFaq, { isLoading: isUpdating }] = useUpdateFaqMutation();
+  const [deleteFaq, { isLoading: isDeleting }] = useDeleteFaqMutation();
+
   const [openFormModal, setOpenFormModal] = useState(false);
   const [selectedFaq, setSelectedFaq] = useState<FaqFormData | null>(null);
+
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
-  const [faqToDelete, setFaqToDelete] = useState<UserRecord | null>(null);
+  const [faqToDelete, setFaqToDelete] = useState<FaqRecord | null>(null);
+
+  const faqs: FaqRecord[] = rawFaqs.map((item: FaqItem) => ({
+    id: item.id,
+    title: item.title,
+    description: item.description,
+    status: item.status?.toUpperCase() === "LIVE" ? "Live" : "Draft",
+    latestdDate: item.updatedAt || item.createdAt
+      ? new Date(item.updatedAt || item.createdAt || "").toLocaleDateString(
+          "en-GB",
+          { day: "2-digit", month: "short", year: "numeric" }
+        )
+      : "Recently",
+  }));
 
   const handleSelectAll = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.checked) {
-      setSelectedIds(filteredFaqs.map((item) => item.id));
+      setSelectedIds(faqs.map((item) => item.id));
     } else {
       setSelectedIds([]);
     }
@@ -111,66 +103,48 @@ export function FaqsTab() {
 
   const handleSelectRow = (id: string) => {
     setSelectedIds((prev) =>
-      prev.includes(id) ? prev.filter((item) => item !== id) : [...prev, id],
+      prev.includes(id) ? prev.filter((item) => item !== id) : [...prev, id]
     );
   };
 
-  // Add / Edit submission
-  const handleSaveFaq = (data: FaqFormData) => {
-    if (data.id) {
-      setFaqs((prev) =>
-        prev.map((item) =>
-          item.id === data.id
-            ? {
-                ...item,
-                title: data.title,
-                description: data.description,
-                status: data.status,
-              }
-            : item,
-        ),
-      );
-    } else {
-      const newFaq: UserRecord = {
-        id: String(Date.now()),
-        title: data.title,
-        description: data.description,
-        status: data.status,
-        latestdDate: new Date().toLocaleDateString("en-GB", {
-          day: "2-digit",
-          month: "short",
-          year: "numeric",
-        }),
-      };
-      setFaqs((prev) => [newFaq, ...prev]);
+  const handleSaveFaq = async (data: FaqFormData) => {
+    try {
+      const payloadStatus = data.status.toLowerCase() === "live" ? "LIVE" : "DRAFT";
+      if (data.id) {
+        await updateFaq({
+          faqId: data.id,
+          title: data.title,
+          description: data.description,
+          status: payloadStatus,
+        }).unwrap();
+      } else {
+        await createFaq({
+          title: data.title,
+          description: data.description,
+          status: payloadStatus,
+        }).unwrap();
+      }
+      setOpenFormModal(false);
+      setSelectedFaq(null);
+    } catch {
+      // Error handled by mutation
     }
-    setOpenFormModal(false);
-    setSelectedFaq(null);
   };
 
-  // Delete confirmation
-  const handleConfirmDelete = () => {
+  const handleConfirmDelete = async () => {
     if (faqToDelete) {
-      setFaqs((prev) => prev.filter((item) => item.id !== faqToDelete.id));
-      setSelectedIds((prev) => prev.filter((id) => id !== faqToDelete.id));
-      setFaqToDelete(null);
+      try {
+        await deleteFaq(faqToDelete.id).unwrap();
+        setSelectedIds((prev) => prev.filter((id) => id !== faqToDelete.id));
+        setFaqToDelete(null);
+        setIsDeleteModalOpen(false);
+      } catch {
+        setIsDeleteModalOpen(false);
+      }
     }
-    setIsDeleteModalOpen(false);
   };
 
-  // Filtered FAQs
-  const filteredFaqs = faqs.filter((faq) => {
-    const matchesSearch =
-      faq.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      faq.description.toLowerCase().includes(searchTerm.toLowerCase());
-
-    const matchesStatus =
-      !statusFilter || faq.status.toLowerCase() === statusFilter.toLowerCase();
-
-    return matchesSearch && matchesStatus;
-  });
-
-  const columns: Column<UserRecord>[] = [
+  const columns: Column<FaqRecord>[] = [
     {
       key: "checkbox",
       header: (
@@ -178,8 +152,7 @@ export function FaqsTab() {
           <input
             type="checkbox"
             checked={
-              selectedIds.length === filteredFaqs.length &&
-              filteredFaqs.length > 0
+              selectedIds.length === faqs.length && faqs.length > 0
             }
             onChange={handleSelectAll}
             className="h-4 w-4 cursor-pointer rounded border-slate-300 text-[#0a3558] focus:ring-0"
@@ -205,19 +178,19 @@ export function FaqsTab() {
     {
       key: "description",
       header: "Description",
-      className: "min-w-[140px]",
+      className: "min-w-[280px]",
       cell: (item) => (
-        <span className="overflow-hidden text-[#5A5A5A] text-ellipsis text-[12px] font-medium leading-[160%]">
+        <span className="text-[#475569] text-xs font-normal leading-[19.2px] line-clamp-2">
           {item.description}
         </span>
       ),
     },
     {
       key: "latestdDate",
-      header: "Last Updated",
-      className: "min-w-[140px]",
+      header: "Latest Date",
+      className: "min-w-[120px]",
       cell: (item) => (
-        <span className="overflow-hidden text-[#5A5A5A] text-ellipsis text-[12px] font-medium leading-[160%]">
+        <span className="text-xs font-medium text-slate-600 whitespace-nowrap">
           {item.latestdDate}
         </span>
       ),
@@ -225,17 +198,16 @@ export function FaqsTab() {
     {
       key: "status",
       header: "Status",
-      className: "min-w-[120px]",
+      className: "min-w-[100px]",
       cell: (item) => <StatusBadge status={item.status} />,
     },
     {
       key: "action",
       header: "Action",
-      className: "w-24 min-w-[96px] text-center",
+      className: "w-20 min-w-[80px] text-center",
       cell: (item) => (
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 justify-center">
           <button
-            type="button"
             onClick={() => {
               setSelectedFaq({
                 id: item.id,
@@ -245,19 +217,20 @@ export function FaqsTab() {
               });
               setOpenFormModal(true);
             }}
+            type="button"
             className="flex h-8 w-8 items-center justify-center rounded border border-slate-200 text-slate-500 transition-colors hover:bg-slate-50 hover:text-slate-800"
-            title="Edit FAQ"
+            aria-label="Edit FAQ"
           >
             <EditIcon />
           </button>
           <button
-            type="button"
             onClick={() => {
               setFaqToDelete(item);
               setIsDeleteModalOpen(true);
             }}
+            type="button"
             className="flex h-8 w-8 items-center justify-center rounded border border-slate-200 text-red-500 transition-colors hover:bg-red-50 hover:text-red-700"
-            title="Delete FAQ"
+            aria-label="Delete FAQ"
           >
             <DeleteIcon />
           </button>
@@ -268,75 +241,85 @@ export function FaqsTab() {
 
   return (
     <div>
-      <div className="w-full font-['Manrope']">
-        {/* Top Toolbar with Search and Dropdown Filters */}
-        <TableToolbar
-          searchQuery={searchTerm}
-          onSearchChange={(e) => setSearchTerm(e.target.value)}
-          dropdownFilters={[
-            {
-              placeholder: "All Status",
-              value: statusFilter,
-              options: [
-                { label: "All Status", value: "" },
-                { label: "Live", value: "live" },
-                { label: "Draft", value: "draft" },
-              ],
-              onChange: (val) => setStatusFilter(val),
-            },
-          ]}
-          actionButton={
-            <CustomButton
-              size="md"
-              leadingIcon={<PlusIcon />}
-              onClick={() => {
-                setSelectedFaq(null);
-                setOpenFormModal(true);
-              }}
-            >
-              Add FAQ
-            </CustomButton>
-          }
-        />
-
-        {/* Main Data Table */}
-        <div className="border-x border-b border-[#E8E8E8] rounded-b-xl overflow-hidden bg-white">
-          <DataTable columns={columns} data={filteredFaqs} pagination={true} />
-        </div>
-
-        {/* Add / Edit FAQ Modal */}
-        <CustomModal
-          showCloseButton={false}
-          size="xsm"
-          open={openFormModal}
-          onOpenChange={setOpenFormModal}
-        >
-          <FaqAdd
-            initialData={selectedFaq}
-            onCancel={() => {
-              setOpenFormModal(false);
+      <TableToolbar
+        searchQuery={searchTerm}
+        onSearchChange={(e) => setSearchTerm(e.target.value)}
+        dropdownFilters={[
+          {
+            placeholder: "All Status",
+            value: statusFilter,
+            options: [
+              { label: "All Status", value: "" },
+              { label: "Live", value: "live" },
+              { label: "Draft", value: "draft" },
+            ],
+            onChange: (val) => setStatusFilter(val),
+          },
+        ]}
+        onSortClick={() => {}}
+        actionButton={
+          <CustomButton
+            onClick={() => {
               setSelectedFaq(null);
+              setOpenFormModal(true);
             }}
-            onSubmit={handleSaveFaq}
-          />
-        </CustomModal>
+            size="md"
+            leadingIcon={<PlusIcon className="w-4 h-4" />}
+          >
+            Add FAQ
+          </CustomButton>
+        }
+      />
 
-        {/* Delete FAQ Confirmation Modal */}
-        <CustomModal
-          showCloseButton={false}
-          size="xsm"
-          open={isDeleteModalOpen}
-          onOpenChange={setIsDeleteModalOpen}
-        >
-          <DeleteFaq
-            onCancel={() => {
-              setIsDeleteModalOpen(false);
-              setFaqToDelete(null);
-            }}
-            onConfirm={handleConfirmDelete}
-          />
-        </CustomModal>
+      <div className="border-x border-b border-[#E8E8E8] rounded-b-xl overflow-hidden bg-white">
+        {isLoading || isFetching ? (
+          <div className="flex items-center justify-center p-16">
+            <Loader2 className="h-6 w-6 animate-spin text-[#0f3453]" />
+          </div>
+        ) : faqs.length === 0 ? (
+          <div className="flex flex-col items-center justify-center p-16 text-center">
+            <p className="text-base font-semibold text-slate-700">No FAQs found</p>
+            <p className="text-xs text-slate-500 mt-1">
+              Add your first FAQ entry to show here.
+            </p>
+          </div>
+        ) : (
+          <DataTable columns={columns} data={faqs} pagination={true} />
+        )}
       </div>
+
+      <CustomModal
+        showCloseButton={false}
+        size="xsm"
+        open={openFormModal}
+        onOpenChange={() => {
+          setOpenFormModal(false);
+          setSelectedFaq(null);
+        }}
+      >
+        <FaqAdd
+          initialData={selectedFaq}
+          onCancel={() => {
+            setOpenFormModal(false);
+            setSelectedFaq(null);
+          }}
+          onSubmit={handleSaveFaq}
+          isSubmitting={isCreating || isUpdating}
+        />
+      </CustomModal>
+
+      <CustomModal
+        showCloseButton={false}
+        size="xsm"
+        open={isDeleteModalOpen}
+        onOpenChange={() => setIsDeleteModalOpen(false)}
+      >
+        <DeleteFaq
+          onCancel={() => setIsDeleteModalOpen(false)}
+          onConfirm={handleConfirmDelete}
+          isDeleting={isDeleting}
+        />
+      </CustomModal>
     </div>
   );
 }

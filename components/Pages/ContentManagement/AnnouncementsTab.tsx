@@ -12,9 +12,16 @@ import CreateNewAnnounceMent, {
 } from "./ContentManagementAllModal/CreateNewAnnounceMent";
 import EditAnnouncement from "./ContentManagementAllModal/EditAnnouncemnt";
 import DeleteAnnouncement from "./ContentManagementAllModal/DeleteAnnouncement";
-import { PlusIcon } from "lucide-react";
+import { PlusIcon, Loader2 } from "lucide-react";
+import {
+  useGetAnnouncementsQuery,
+  useCreateAnnouncementMutation,
+  useUpdateAnnouncementMutation,
+  useDeleteAnnouncementMutation,
+} from "@/lib/redux/api/contentApi";
+import { AnnouncementItem } from "@/types/content.types";
 
-export interface UserRecord {
+export interface AnnouncementRecord {
   id: string;
   title: string;
   description: string;
@@ -23,64 +30,21 @@ export interface UserRecord {
   published: string;
 }
 
-export type AnnouncementRecord = UserRecord;
-
-const sampleAnnouncements: UserRecord[] = [
-  {
-    id: "1",
-    title: "How do I hire an expert?",
-    description:
-      "Search or post a job, review the quotes you receive, then accept the expert that fits you needs and pay securely in-app.",
-    audience: "All",
-    status: "Draft",
-    published: "Jul 27, 2026",
-  },
-  {
-    id: "2",
-    title: "When is my payment released?",
-    description:
-      "Payments are held securely and only released to the expert once you confirm the job is complete.",
-    audience: "Clients",
-    status: "Live",
-    published: "Jul 27, 2026",
-  },
-  {
-    id: "3",
-    title: "Can I get a refund?",
-    description:
-      "Yes. If a job is cancelled or not completed as agreed, your funds will be refunded.",
-    audience: "Experts",
-    status: "Live",
-    published: "Jul 27, 2026",
-  },
-];
-
 const StatusBadge = ({ status }: { status: string }) => {
-  const config = {
-    Live: {
-      bg: "bg-sky-50",
-      border: "outline-sky-200",
-      text: "text-[#0777F6]",
-      dot: "bg-[#0777F6]",
-    },
-    Draft: {
-      bg: "bg-[#FEF4DC]",
-      border: "outline-[#F8B500]",
-      text: "text-[#F8B500]",
-      dot: "bg-[#F8B500]",
-    },
-    Suspended: {
-      bg: "bg-rose-50",
-      border: "outline-rose-200",
-      text: "text-rose-600",
-      dot: "bg-rose-500",
-    },
-  }[status] ?? {
-    bg: "bg-slate-50",
-    border: "outline-slate-200",
-    text: "text-slate-600",
-    dot: "bg-slate-400",
-  };
+  const isLive = status.toLowerCase() === "live";
+  const config = isLive
+    ? {
+        bg: "bg-sky-50",
+        border: "outline-sky-200",
+        text: "text-[#0777F6]",
+        dot: "bg-[#0777F6]",
+      }
+    : {
+        bg: "bg-[#FEF4DC]",
+        border: "outline-[#F8B500]",
+        text: "text-[#F8B500]",
+        dot: "bg-[#F8B500]",
+      };
 
   return (
     <div
@@ -90,32 +54,69 @@ const StatusBadge = ({ status }: { status: string }) => {
       <span
         className={`font-['Manrope'] text-xs font-medium leading-4 ${config.text}`}
       >
-        {status}
+        {isLive ? "Live" : "Draft"}
       </span>
     </div>
   );
 };
 
 export function AnnouncementsTab() {
-  const [announcements, setAnnouncements] =
-    useState<UserRecord[]>(sampleAnnouncements);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
-  const [roleFilter, setRoleFilter] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
+  const [audienceFilter, setAudienceFilter] = useState("");
 
-  // Modal states
+  const {
+    data: rawAnnouncements = [],
+    isLoading,
+    isFetching,
+  } = useGetAnnouncementsQuery({
+    search: searchTerm || undefined,
+    status: statusFilter ? statusFilter.toUpperCase() : undefined,
+    audience: audienceFilter ? audienceFilter.toUpperCase() : undefined,
+  });
+
+  const [createAnnouncement, { isLoading: isCreating }] =
+    useCreateAnnouncementMutation();
+  const [updateAnnouncement, { isLoading: isUpdating }] =
+    useUpdateAnnouncementMutation();
+  const [deleteAnnouncement, { isLoading: isDeleting }] =
+    useDeleteAnnouncementMutation();
+
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [selectedAnnouncement, setSelectedAnnouncement] =
     useState<AnounceMentFormData | null>(null);
+
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [announcementToDelete, setAnnouncementToDelete] =
-    useState<UserRecord | null>(null);
+    useState<AnnouncementRecord | null>(null);
+
+  const announcements: AnnouncementRecord[] = rawAnnouncements.map(
+    (item: AnnouncementItem) => {
+      let aud = "All";
+      if (item.audience?.toUpperCase() === "CLIENTS") aud = "Clients";
+      if (item.audience?.toUpperCase() === "EXPERTS") aud = "Experts";
+
+      return {
+        id: item.id,
+        title: item.title,
+        description: item.description,
+        audience: aud,
+        status: item.status?.toUpperCase() === "LIVE" ? "Live" : "Draft",
+        published: item.createdAt || item.updatedAt
+          ? new Date(item.createdAt || item.updatedAt || "").toLocaleDateString(
+              "en-US",
+              { month: "short", day: "2-digit", year: "numeric" }
+            )
+          : "Recently",
+      };
+    }
+  );
 
   const handleSelectAll = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.checked) {
-      setSelectedIds(filteredAnnouncements.map((item) => item.id));
+      setSelectedIds(announcements.map((item) => item.id));
     } else {
       setSelectedIds([]);
     }
@@ -123,79 +124,79 @@ export function AnnouncementsTab() {
 
   const handleSelectRow = (id: string) => {
     setSelectedIds((prev) =>
-      prev.includes(id) ? prev.filter((item) => item !== id) : [...prev, id],
+      prev.includes(id) ? prev.filter((item) => item !== id) : [...prev, id]
     );
   };
 
-  // Add announcement handler
-  const handleAddAnnouncement = (data: AnounceMentFormData) => {
-    const newAnnouncement: UserRecord = {
-      id: String(Date.now()),
-      title: data.title,
-      description: data.description,
-      audience: data.audience || "All",
-      status: data.status,
-      published: new Date().toLocaleDateString("en-GB", {
-        day: "2-digit",
-        month: "short",
-        year: "numeric",
-      }),
-    };
-    setAnnouncements((prev) => [newAnnouncement, ...prev]);
-    setIsAddModalOpen(false);
-  };
+  const handleCreateAnnouncement = async (data: AnounceMentFormData) => {
+    try {
+      const payloadAudience =
+        data.audience?.toUpperCase() === "EXPERTS"
+          ? "EXPERTS"
+          : data.audience?.toUpperCase() === "CLIENTS"
+          ? "CLIENTS"
+          : "ALL";
 
-  // Edit announcement handler
-  const handleEditAnnouncement = (data: AnounceMentFormData) => {
-    if (data.id) {
-      setAnnouncements((prev) =>
-        prev.map((item) =>
-          item.id === data.id
-            ? {
-                ...item,
-                title: data.title,
-                description: data.description,
-                audience: data.audience || item.audience || "All",
-                status: data.status,
-              }
-            : item,
-        ),
-      );
+      const payloadStatus =
+        data.status.toLowerCase() === "live" ? "LIVE" : "DRAFT";
+
+      await createAnnouncement({
+        title: data.title,
+        description: data.description,
+        audience: payloadAudience,
+        status: payloadStatus,
+      }).unwrap();
+
+      setIsAddModalOpen(false);
+    } catch {
+      // Error handled by mutation
     }
-    setIsEditModalOpen(false);
-    setSelectedAnnouncement(null);
   };
 
-  // Delete announcement handler
-  const handleDeleteConfirm = () => {
+  const handleUpdateAnnouncement = async (data: AnounceMentFormData) => {
+    if (!data.id) return;
+    try {
+      const payloadAudience =
+        data.audience?.toUpperCase() === "EXPERTS"
+          ? "EXPERTS"
+          : data.audience?.toUpperCase() === "CLIENTS"
+          ? "CLIENTS"
+          : "ALL";
+
+      const payloadStatus =
+        data.status.toLowerCase() === "live" ? "LIVE" : "DRAFT";
+
+      await updateAnnouncement({
+        announcementId: data.id,
+        title: data.title,
+        description: data.description,
+        audience: payloadAudience,
+        status: payloadStatus,
+      }).unwrap();
+
+      setIsEditModalOpen(false);
+      setSelectedAnnouncement(null);
+    } catch {
+      // Error handled by mutation
+    }
+  };
+
+  const handleConfirmDelete = async () => {
     if (announcementToDelete) {
-      setAnnouncements((prev) =>
-        prev.filter((item) => item.id !== announcementToDelete.id),
-      );
-      setSelectedIds((prev) =>
-        prev.filter((id) => id !== announcementToDelete.id),
-      );
-      setAnnouncementToDelete(null);
+      try {
+        await deleteAnnouncement(announcementToDelete.id).unwrap();
+        setSelectedIds((prev) =>
+          prev.filter((id) => id !== announcementToDelete.id)
+        );
+        setAnnouncementToDelete(null);
+        setIsDeleteModalOpen(false);
+      } catch {
+        setIsDeleteModalOpen(false);
+      }
     }
-    setIsDeleteModalOpen(false);
   };
 
-  // Filtered announcements
-  const filteredAnnouncements = announcements.filter((item) => {
-    const matchesSearch =
-      item.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      item.description.toLowerCase().includes(searchTerm.toLowerCase());
-
-    const matchesAudience =
-      !roleFilter || item.audience.toLowerCase() === roleFilter.toLowerCase();
-
-    const matchesStatus =
-      !statusFilter || item.status.toLowerCase() === statusFilter.toLowerCase();
-
-    return matchesSearch && matchesAudience && matchesStatus;
-  });
-
-  const columns: Column<UserRecord>[] = [
+  const columns: Column<AnnouncementRecord>[] = [
     {
       key: "checkbox",
       header: (
@@ -203,8 +204,8 @@ export function AnnouncementsTab() {
           <input
             type="checkbox"
             checked={
-              selectedIds.length === filteredAnnouncements.length &&
-              filteredAnnouncements.length > 0
+              selectedIds.length === announcements.length &&
+              announcements.length > 0
             }
             onChange={handleSelectAll}
             className="h-4 w-4 cursor-pointer rounded border-slate-300 text-[#0a3558] focus:ring-0"
@@ -230,19 +231,19 @@ export function AnnouncementsTab() {
     {
       key: "description",
       header: "Description",
-      className: "min-w-[140px]",
+      className: "min-w-[280px]",
       cell: (item) => (
-        <span className="overflow-hidden text-[#5A5A5A] text-ellipsis text-[12px] font-medium leading-[160%]">
+        <span className="text-[#475569] text-xs font-normal leading-[19.2px] line-clamp-2">
           {item.description}
         </span>
       ),
     },
     {
       key: "audience",
-      header: "Audience",
+      header: "Target Audience",
       className: "min-w-[140px]",
       cell: (item) => (
-        <span className="overflow-hidden text-[#5A5A5A] text-ellipsis text-[12px] font-medium leading-[160%]">
+        <span className="text-xs font-medium text-slate-600">
           {item.audience}
         </span>
       ),
@@ -250,15 +251,15 @@ export function AnnouncementsTab() {
     {
       key: "status",
       header: "Status",
-      className: "min-w-[120px]",
+      className: "min-w-[100px]",
       cell: (item) => <StatusBadge status={item.status} />,
     },
     {
       key: "published",
-      header: "Published Date",
-      className: "min-w-[140px]",
+      header: "Published",
+      className: "min-w-[120px]",
       cell: (item) => (
-        <span className="overflow-hidden text-[#5A5A5A] text-ellipsis text-[12px] font-medium leading-[160%]">
+        <span className="text-xs font-medium text-slate-600 whitespace-nowrap">
           {item.published}
         </span>
       ),
@@ -266,11 +267,10 @@ export function AnnouncementsTab() {
     {
       key: "action",
       header: "Action",
-      className: "w-24 min-w-[96px] text-center",
+      className: "w-20 min-w-[80px] text-center",
       cell: (item) => (
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 justify-center">
           <button
-            type="button"
             onClick={() => {
               setSelectedAnnouncement({
                 id: item.id,
@@ -281,19 +281,20 @@ export function AnnouncementsTab() {
               });
               setIsEditModalOpen(true);
             }}
+            type="button"
             className="flex h-8 w-8 items-center justify-center rounded border border-slate-200 text-slate-500 transition-colors hover:bg-slate-50 hover:text-slate-800"
-            title="Edit Announcement"
+            aria-label="Edit announcement"
           >
             <EditIcon />
           </button>
           <button
-            type="button"
             onClick={() => {
               setAnnouncementToDelete(item);
               setIsDeleteModalOpen(true);
             }}
+            type="button"
             className="flex h-8 w-8 items-center justify-center rounded border border-slate-200 text-red-500 transition-colors hover:bg-red-50 hover:text-red-700"
-            title="Delete Announcement"
+            aria-label="Delete announcement"
           >
             <DeleteIcon />
           </button>
@@ -304,99 +305,106 @@ export function AnnouncementsTab() {
 
   return (
     <div>
-      <div className="w-full font-['Manrope']">
-        {/* Top Toolbar with Search and Dropdown Filters */}
-        <TableToolbar
-          searchQuery={searchTerm}
-          onSearchChange={(e) => setSearchTerm(e.target.value)}
-          dropdownFilters={[
-            {
-              placeholder: "All Audience",
-              value: roleFilter,
-              options: [
-                { label: "All Audience", value: "" },
-                { label: "Clients", value: "clients" },
-                { label: "Experts", value: "experts" },
-              ],
-              onChange: (val) => setRoleFilter(val),
-            },
-            {
-              placeholder: "All Status",
-              value: statusFilter,
-              options: [
-                { label: "All Status", value: "" },
-                { label: "Live", value: "live" },
-                { label: "Draft", value: "draft" },
-              ],
-              onChange: (val) => setStatusFilter(val),
-            },
-          ]}
-          actionButton={
-            <CustomButton
-              size="md"
-              leadingIcon={<PlusIcon />}
-              onClick={() => setIsAddModalOpen(true)}
-            >
-              Create New Announcement
-            </CustomButton>
-          }
-        />
+      <TableToolbar
+        searchQuery={searchTerm}
+        onSearchChange={(e) => setSearchTerm(e.target.value)}
+        dropdownFilters={[
+          {
+            placeholder: "All Status",
+            value: statusFilter,
+            options: [
+              { label: "All Status", value: "" },
+              { label: "Live", value: "live" },
+              { label: "Draft", value: "draft" },
+            ],
+            onChange: (val) => setStatusFilter(val),
+          },
+          {
+            placeholder: "All Audience",
+            value: audienceFilter,
+            options: [
+              { label: "All Audience", value: "" },
+              { label: "All Users", value: "all" },
+              { label: "Clients", value: "clients" },
+              { label: "Experts", value: "experts" },
+            ],
+            onChange: (val) => setAudienceFilter(val),
+          },
+        ]}
+        onSortClick={() => {}}
+        actionButton={
+          <CustomButton
+            onClick={() => setIsAddModalOpen(true)}
+            size="md"
+            leadingIcon={<PlusIcon className="w-4 h-4" />}
+          >
+            Add Announcement
+          </CustomButton>
+        }
+      />
 
-        {/* Main Data Table */}
-        <div className="border-x border-b border-[#E8E8E8] rounded-b-xl overflow-hidden bg-white">
-          <DataTable
-            columns={columns}
-            data={filteredAnnouncements}
-            pagination={true}
-          />
-        </div>
-
-        {/* 1. Add Announcement Modal */}
-        <CustomModal
-          showCloseButton={false}
-          size="xsm"
-          open={isAddModalOpen}
-          onOpenChange={setIsAddModalOpen}
-        >
-          <CreateNewAnnounceMent
-            onCancel={() => setIsAddModalOpen(false)}
-            onSubmit={handleAddAnnouncement}
-          />
-        </CustomModal>
-
-        {/* 2. Edit Announcement Modal */}
-        <CustomModal
-          showCloseButton={false}
-          size="xsm"
-          open={isEditModalOpen}
-          onOpenChange={setIsEditModalOpen}
-        >
-          <EditAnnouncement
-            initialData={selectedAnnouncement}
-            onCancel={() => {
-              setIsEditModalOpen(false);
-              setSelectedAnnouncement(null);
-            }}
-            onSubmit={handleEditAnnouncement}
-          />
-        </CustomModal>
-
-        {/* 3. Delete Announcement Modal */}
-        <CustomModal
-          showCloseButton={false}
-          size="xsm"
-          open={isDeleteModalOpen}
-          onOpenChange={setIsDeleteModalOpen}
-        >
-          <DeleteAnnouncement
-            onCancel={() => {
-              setIsDeleteModalOpen(false);
-              setAnnouncementToDelete(null);
-            }}
-            onConfirm={handleDeleteConfirm}
-          />
-        </CustomModal>
+      <div className="border-x border-b border-[#E8E8E8] rounded-b-xl overflow-hidden bg-white">
+        {isLoading || isFetching ? (
+          <div className="flex items-center justify-center p-16">
+            <Loader2 className="h-6 w-6 animate-spin text-[#0f3453]" />
+          </div>
+        ) : announcements.length === 0 ? (
+          <div className="flex flex-col items-center justify-center p-16 text-center">
+            <p className="text-base font-semibold text-slate-700">
+              No announcements found
+            </p>
+            <p className="text-xs text-slate-500 mt-1">
+              Create an announcement to share updates with users.
+            </p>
+          </div>
+        ) : (
+          <DataTable columns={columns} data={announcements} pagination={true} />
+        )}
       </div>
+
+      <CustomModal
+        showCloseButton={false}
+        size="xsm"
+        open={isAddModalOpen}
+        onOpenChange={() => setIsAddModalOpen(false)}
+      >
+        <CreateNewAnnounceMent
+          onCancel={() => setIsAddModalOpen(false)}
+          onSubmit={handleCreateAnnouncement}
+        />
+      </CustomModal>
+
+      <CustomModal
+        showCloseButton={false}
+        size="xsm"
+        open={isEditModalOpen}
+        onOpenChange={() => {
+          setIsEditModalOpen(false);
+          setSelectedAnnouncement(null);
+        }}
+      >
+        <EditAnnouncement
+          initialData={selectedAnnouncement}
+          onCancel={() => {
+            setIsEditModalOpen(false);
+            setSelectedAnnouncement(null);
+          }}
+          onSubmit={handleUpdateAnnouncement}
+        />
+      </CustomModal>
+
+      <CustomModal
+        showCloseButton={false}
+        size="xsm"
+        open={isDeleteModalOpen}
+        onOpenChange={() => setIsDeleteModalOpen(false)}
+      >
+        <DeleteAnnouncement
+          onCancel={() => setIsDeleteModalOpen(false)}
+          onConfirm={handleConfirmDelete}
+          isDeleting={isDeleting}
+        />
+      </CustomModal>
     </div>
   );
 }

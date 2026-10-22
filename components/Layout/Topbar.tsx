@@ -1,9 +1,15 @@
 "use client";
 
-import { usePathname } from "next/navigation";
-import { Menu, Search } from "lucide-react";
+import { usePathname, useRouter } from "next/navigation";
+import { Menu, Search, LogOut, ChevronDown } from "lucide-react";
 import { getPageMeta } from "./nav-config";
 import { NotificationsDropdown } from "@/components/shared/NotificationsDropdown";
+import { CustomDropdown } from "@/components/shared/CustomDropdown";
+import { useAppSelector } from "@/lib/redux/hooks";
+import { selectCurrentUser, selectIsAuthenticated } from "@/lib/redux/features/auth/authSlice";
+import { useGetProfileQuery, useLogoutAdminMutation } from "@/lib/redux/api/authApi";
+
+import { GlobalSearch } from "./GlobalSearch";
 
 export function Topbar({
   isSidebarOpen,
@@ -42,65 +48,96 @@ export function Topbar({
       <HeaderActions />
     </header>
   );
-
 }
-
-
-
-
 
 export interface HeaderActionsProps {
   onSearchChange?: (e: React.ChangeEvent<HTMLInputElement>) => void;
   onNotificationClick?: () => void;
-  user?: {
-    name: string;
-    role: string;
-    avatar: string;
-  };
 }
 
 export function HeaderActions({
   onSearchChange,
   onNotificationClick,
-  user = {
-    name: "Daniel Green",
-    role: "Admin",
-    avatar: "https://placehold.co/36x36",
-  },
 }: HeaderActionsProps) {
+  const router = useRouter();
+  const isAuthenticated = useAppSelector(selectIsAuthenticated);
+  const currentUser = useAppSelector(selectCurrentUser);
+
+  useGetProfileQuery(undefined, {
+    skip: !isAuthenticated,
+  });
+
+  const [logoutAdmin, { isLoading: isLoggingOut }] = useLogoutAdminMutation();
+
+  const handleLogout = async () => {
+    try {
+      await logoutAdmin().unwrap();
+    } catch {
+      // Ignored: cleanup happens locally regardless
+    } finally {
+      router.push("/login");
+    }
+  };
+
+  const displayName = currentUser?.fullName || "Admin User";
+  const displayRole = currentUser?.role?.name || (currentUser?.isSuperAdmin ? "Super Admin" : "Admin");
+  const displayEmail = currentUser?.email || "";
+  const avatarUrl = currentUser?.avatar || "https://placehold.co/72x72?text=" + encodeURIComponent(displayName.charAt(0));
+
   return (
     <div className="flex items-center gap-3 font-['Manrope']">
-      {/* Search Input */}
-      <label className="relative hidden h-9 w-56 items-center rounded-lg border border-[#e4ebf1] bg-white px-3 py-2.5 shadow-sm transition-colors focus-within:border-slate-300 md:flex">
-        <span className="sr-only">Search</span>
-        <Search className="h-4 w-4 shrink-0 text-[#9aaab5]" />
-        <input
-          type="search"
-          placeholder="Type to search"
-          onChange={onSearchChange}
-          className="ml-2 w-full bg-transparent text-xs font-normal text-[#0f3453] placeholder:text-[#9aaab5] outline-none"
-        />
-      </label>
+      <GlobalSearch />
 
       <NotificationsDropdown onOpen={onNotificationClick} />
 
-      {/* User Profile */}
-      <div className="flex items-center gap-3">
-        <img
-          src={user.avatar}
-          alt={user.name}
-          className="h-9 w-9 rounded-full object-cover"
-        />
-        <div className="flex flex-col">
-          <span className="text-base font-semibold text-[#0f3453] leading-5">
-            {user.name}
-          </span>
-          <span className="text-xs font-normal text-slate-500 leading-tight">
-            {user.role}
-          </span>
-        </div>
-      </div>
+      <CustomDropdown
+        align="end"
+        triggerClassName="flex items-center gap-2.5 p-1 rounded-lg hover:bg-white/80 transition-colors cursor-pointer"
+        trigger={
+          <div className="flex items-center gap-3">
+            <img
+              src={avatarUrl}
+              alt={displayName}
+              className="h-9 w-9 rounded-full object-cover border border-[#e4ebf1]"
+            />
+            <div className="hidden sm:flex flex-col text-left">
+              <span className="text-sm font-semibold text-[#0f3453] leading-5">
+                {displayName}
+              </span>
+              <span className="text-[11px] font-normal text-slate-500 leading-tight">
+                {displayRole}
+              </span>
+            </div>
+            <ChevronDown className="h-4 w-4 text-[#9aaab5]" />
+          </div>
+        }
+      >
+        {({ close }) => (
+          <div className="w-56 p-1 bg-white rounded-xl shadow-lg border border-slate-100 font-['Manrope']">
+            <div className="px-3 py-2 border-b border-slate-100">
+              <p className="text-sm font-semibold text-[#0f3453] truncate">{displayName}</p>
+              <p className="text-xs text-slate-500 truncate">{displayEmail}</p>
+              <span className="mt-1 inline-block px-2 py-0.5 text-[10px] font-medium rounded bg-sky-50 text-sky-700">
+                {displayRole}
+              </span>
+            </div>
+            <div className="p-1">
+              <button
+                type="button"
+                disabled={isLoggingOut}
+                onClick={async () => {
+                  close();
+                  await handleLogout();
+                }}
+                className="w-full flex items-center gap-2 px-3 py-2 text-xs font-medium text-red-600 rounded-lg hover:bg-red-50 transition-colors disabled:opacity-50"
+              >
+                <LogOut className="h-4 w-4 text-red-500" />
+                <span>{isLoggingOut ? "Logging out..." : "Logout"}</span>
+              </button>
+            </div>
+          </div>
+        )}
+      </CustomDropdown>
     </div>
   );
 }
-
